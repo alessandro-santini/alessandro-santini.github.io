@@ -1,15 +1,9 @@
 ---
-title: "Paper Title Number 1"
+title: "Learning universality and scaling from simple deposition models"
 collection: publications
-permalink: /publication/2009-10-01-paper-title-number-1
-excerpt: 'This paper is about the number 1. The number 2 is left for future work.'
-date: 2009-10-01
-venue: 'Journal 1'
-paperurl: 'http://academicpages.github.io/files/paper1.pdf'
-citation: 'Your Name, You. (2009). &quot;Paper Title Number 1.&quot; <i>Journal 1</i>. 1(1).'
+permalink: /publication/2018-08-01
+excerpt: 'We use deposition models of kinetic roughening of a growing surface to introduce the concepts of universality and scaling and to analyze the qualitative and quantitative role of different parameters. In particular, we focus on two classes of models where the deposition is accompanied by a local relaxation process within a distance δ. The models are in the Edwards-Wilkinson universality class, but the role of δ is nontrivial.'
+date: 2018-08-01
+paperurl: 'https://aapt.scitation.org/doi/abs/10.1119/1.5041372'
+citation: 'A. Santini, P. Politi (2018). &quot;Learning universality and scaling from simple deposition models&quot; <i>American Journal of Physics</i>, 86 (8), 616-621.'
 ---
-This paper is about the number 1. The number 2 is left for future work.
-
-[Download paper here](http://academicpages.github.io/files/paper1.pdf)
-
-Recommended citation: Your Name, You. (2009). "Paper Title Number 1." <i>Journal 1</i>. 1(1).
