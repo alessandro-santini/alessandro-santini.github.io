@@ -12,8 +12,11 @@ redirect_from:
 Education
 ======
 * B.S. in Physics and Astrophysics, University of Florence, 2018
-* M.S. in Physical and Astrophysical Sciences, GitHub University, 2014
-* Ph.D in Version Control Theory, GitHub University, 2018 (expected)
+* M.S. in Physical and Astrophysical Sciences, University of Florence, 2020
+
+Current position
+======
+* Ph.D student in Theory and Numerical Simulation of the Condensed Matter, SISSA
 
 Work experience
 ======
