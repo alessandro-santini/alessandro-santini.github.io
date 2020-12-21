@@ -1,7 +1,7 @@
 ---
 title: "Coarse-grained collisionless dynamics with long-range interactions"
 collection: publications
-excerpt: 'This paper is about the number 2. The number 3 is left for future work.'
+excerpt: 'We present an effective evolution equation for a coarse-grained distribution function of a long-range-interacting system preserving the symplectic structure of the noncollisional Boltzmann, or Vlasov, equation. First, we derive a general form of such an equation based on symmetry considerations only. Then we explicitly derive the equation for one-dimensional systems, finding that it has the form predicted on general grounds. Finally, we use this equation to predict the dependence of the damping times on the coarse-graining scale and numerically check it for some one-dimensional models, including the Hamiltonian mean-field model, a scalar field with quartic interaction, a 1− d self-gravitating system, and a self-gravitating ring.'
 date: 2020-06-22
 paperurl: 'https://journals.aps.org/prresearch/abstract/10.1103/PhysRevResearch.2.023379'
 citation: 'G. Giachetti, A. Santini, L. Casetti (2020). &quot;Coarse-grained collisionless dynamics with long-range interactions&quot; <i>Phys. Rev. Research</i>, 2, 023379.'
