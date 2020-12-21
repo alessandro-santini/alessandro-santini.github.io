@@ -1,8 +1,7 @@
 ---
-title: "Tutor teaching assistant"
+title: "Teaching assistant, University of Florence"
 collection: teaching
 type: "Undergraduate course"
-permalink: /teaching/2019-2020
 venue: "University of Florence"
 date: 2019-11-01
 location: "Florence, Italy"
