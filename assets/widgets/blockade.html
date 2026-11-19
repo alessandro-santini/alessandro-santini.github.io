@@ -1,0 +1,211 @@
+<div class="blockade">
+<style>
+.blockade{--panel:var(--entry);--ink:var(--primary);--muted:var(--secondary);--line:var(--border);
+  --violet:var(--accent);--violet-soft:color-mix(in srgb, var(--accent) 9%, transparent);--amber:var(--primary);margin:16px 0}
+.blockade .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.blockade svg{display:block;width:100%;height:auto}
+.blockade .scene svg{touch-action:none;cursor:grab}
+.blockade .scene svg.dragging{cursor:grabbing}
+.blockade .status{display:flex;align-items:center;gap:.6rem;margin:.3rem 2px 0;font-weight:500;font-size:.9rem}
+.blockade .dot{width:10px;height:10px;border-radius:50%;flex:none}
+.blockade .controls{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;margin:12px 0}
+@media (max-width:500px){.blockade .controls{grid-template-columns:1fr}}
+.blockade .control label{display:flex;justify-content:space-between;font-size:.9rem;margin-bottom:0}
+.blockade .control label span:last-child{font-variant-numeric:tabular-nums;color:var(--muted)}
+.blockade input[type=range]{width:100%;accent-color:var(--violet);height:24px}
+.blockade .readouts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.blockade .readout{border-top:2px solid var(--line);padding-top:4px}
+.blockade .readout .k{font-family:var(--font-serif);font-style:italic;color:var(--muted);font-size:.9rem}
+.blockade .readout .v{font-size:1rem;font-weight:600;font-variant-numeric:tabular-nums}
+.blockade .plot-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.blockade .plot-head span{font-family:var(--font-serif);font-weight:600;font-size:1rem}
+.blockade button{font:inherit;font-size:.9rem;font-weight:500;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:999px;padding:5px 14px;cursor:pointer}
+.blockade button:focus-visible,.blockade input:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+.blockade .plot{margin-bottom:14px}
+.blockade .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.82rem;color:var(--muted);margin-top:2px}
+.blockade .legend i{display:inline-block;width:18px;height:0;border-top:2.5px solid;vertical-align:middle;margin-right:6px}
+.blockade .fine{font-size:.82rem;color:var(--muted);margin-top:10px}
+.blockade .units{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;margin:0 0 10px;background:var(--panel)}
+.blockade .units button{border:0;padding:5px 14px}
+.blockade .units button[aria-pressed="true"]{background:var(--violet);color:var(--theme)}
+</style>
+
+<div class="units" role="group" aria-label="Units">
+  <button type="button" data-mode="phys" aria-pressed="true">Physical units</button>
+  <button type="button" data-mode="dimless" aria-pressed="false">Dimensionless</button>
+</div>
+
+<div class="panel scene">
+  <svg id="scene" viewBox="0 0 360 146" role="img" aria-label="Two atoms with their blockade disks">
+    <g id="disks"></g>
+    <line id="rline" stroke="currentColor" stroke-opacity=".35" stroke-dasharray="3 4"/>
+    <text id="rlabel" text-anchor="middle" font-size="12" fill="currentColor" fill-opacity=".7"></text>
+    <g id="atoms"></g>
+    <g transform="translate(14,136)">
+      <line x1="0" x2="70" y1="0" y2="0" stroke="currentColor" stroke-opacity=".5" stroke-width="2"/>
+      <text x="35" y="-6" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity=".6" id="sbar">5 µm</text>
+    </g>
+    <text id="tlabel" x="346" y="16" text-anchor="end" font-size="12" fill="currentColor" fill-opacity=".6"></text>
+  </svg>
+  <div class="status"><span class="dot" id="sdot"></span><span id="stext"></span></div>
+</div>
+
+<div class="controls">
+  <div class="control">
+    <label for="rs"><span id="rlab">Distance R</span><span id="rv"></span></label>
+    <input id="rs" type="range" min="5" max="15" step="0.1" value="5" list="rb-tick">
+    <datalist id="rb-tick"><option id="rbopt" value="7.2"></option></datalist>
+  </div>
+  <div class="control">
+    <label for="os"><span id="olab">Rabi frequency Ω/2π</span><span id="ov"></span></label>
+    <input id="os" type="range" min="0.3" max="2" step="0.05" value="1">
+  </div>
+</div>
+
+<div class="readouts">
+  <div class="readout"><div class="k" id="kV">V/2π</div><div class="v" id="vv"></div></div>
+  <div class="readout"><div class="k" id="kRb">R<sub>b</sub></div><div class="v" id="rbv"></div></div>
+  <div class="readout"><div class="k">V/Ω</div><div class="v" id="ratio"></div></div>
+</div>
+
+<div class="panel plot">
+  <div class="plot-head"><span>Populations over time</span><button id="play" type="button">Pause</button></div>
+  <svg id="plot" viewBox="0 0 360 136" role="img" aria-label="Probabilities versus time"></svg>
+  <div class="legend">
+    <span><i style="border-color:var(--violet)"></i>one atom excited</span>
+    <span><i style="border-color:var(--amber)"></i>both excited</span>
+    <span><i style="border-color:var(--muted);border-top-style:dashed"></i>both excited, no interaction</span>
+  </div>
+</div>
+
+<p>Each atom is driven resonantly to a Rydberg state at Rabi frequency Ω. Two Rydberg atoms interact with strength V = C<sub>6</sub>/R<sup>6</sup>, shown as V/2π in MHz. When V ≫ Ω the doubly excited state is off resonance: the pair shares a single excitation and oscillates at √2 Ω. The crossover sits at the blockade radius R<sub>b</sub> = (C<sub>6</sub>/Ω)<sup>1/6</sup>.</p>
+<p class="fine">Resonant drive, no decay, exact evolution restricted to the three states |gg⟩, |gr⟩ + |rg⟩ and |rr⟩. Each disk has radius R<sub>b</sub>/2, so the two disks touch exactly at R = R<sub>b</sub>. C<sub>6</sub>/ħ = 865 723 rad·µs⁻¹·µm⁶, the Pulser value for n = 60. Dimensionless view: lengths in units of r<sub>min</sub> = 5 µm, energies in units of J<sub>max</sub> = C<sub>6</sub>/r<sub>min</sub><sup>6</sup>.</p>
+
+<script>
+(function(){
+const root=document.querySelector(".blockade"), $=id=>root.querySelector("#"+id);
+const NS="http://www.w3.org/2000/svg";
+const el=(tag,attrs,parent)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent.appendChild(e);return e;};
+const css=v=>getComputedStyle(root).getPropertyValue(v).trim();
+const C6=865723.02, RMIN=5, JMAX=C6/Math.pow(RMIN,6), T=4, N=600, CX=180, CY=64, S=14; // S: px per µm
+
+function eigSym(A){const a=A.map(r=>r.slice()), v=[[1,0,0],[0,1,0],[0,0,1]];
+  for(let sw=0;sw<60;sw++){if(a[0][1]**2+a[0][2]**2+a[1][2]**2<1e-24)break;
+    for(let p=0;p<2;p++)for(let q=p+1;q<3;q++){if(Math.abs(a[p][q])<1e-300)continue;
+      const th=(a[q][q]-a[p][p])/(2*a[p][q]);const t=(th>=0?1:-1)/(Math.abs(th)+Math.sqrt(th*th+1));
+      const c=1/Math.sqrt(t*t+1),s=t*c;
+      for(let k=0;k<3;k++){const x=a[k][p],y=a[k][q];a[k][p]=c*x-s*y;a[k][q]=s*x+c*y;}
+      for(let k=0;k<3;k++){const x=a[p][k],y=a[q][k];a[p][k]=c*x-s*y;a[q][k]=s*x+c*y;}
+      for(let k=0;k<3;k++){const x=v[k][p],y=v[k][q];v[k][p]=c*x-s*y;v[k][q]=s*x+c*y;}}}
+  return{vals:[a[0][0],a[1][1],a[2][2]],vecs:v};}
+
+let mode="phys", R=5, f=1, data=null, tau=0, playing=!matchMedia("(prefers-reduced-motion: reduce)").matches, last=null;
+
+function compute(){
+  const Om=2*Math.PI*f, V=C6/Math.pow(R,6), a=Om/Math.SQRT2;
+  const {vals,vecs}=eigSym([[0,a,0],[a,0,a],[0,a,V]]);
+  const one=new Float64Array(N+1), two=new Float64Array(N+1), free=new Float64Array(N+1);
+  for(let i=0;i<=N;i++){const t=T*i/N;
+    for(const [j,arr] of [[1,one],[2,two]]){let re=0,im=0;
+      for(let k=0;k<3;k++){const w=vecs[j][k]*vecs[0][k];re+=w*Math.cos(vals[k]*t);im-=w*Math.sin(vals[k]*t);}
+      arr[i]=re*re+im*im;}
+    free[i]=Math.pow(Math.sin(Om*t/2),4);}
+  data={Om,V,Rb:Math.pow(C6/Om,1/6),one,two,free};
+}
+
+// ---- plot ----
+const P={l:34,r:10,t:8,b:34,w:360,h:136};
+const px=t=>P.l+(P.w-P.l-P.r)*t/T, py=p=>P.t+(P.h-P.t-P.b)*(1-p);
+const plot=$("plot");
+const grid=el("g",{},plot), curves=el("g",{fill:"none","stroke-width":2.2,"stroke-linejoin":"round"},plot);
+const cursor=el("line",{y1:P.t,y2:P.h-P.b,stroke:"currentColor","stroke-opacity":.4},plot);
+function drawGrid(){grid.innerHTML="";const ink=css("--muted"),line=css("--line");
+  for(const p of [0,.5,1]){el("line",{x1:P.l,x2:P.w-P.r,y1:py(p),y2:py(p),stroke:line},grid);
+    el("text",{x:P.l-6,y:py(p)+4,"text-anchor":"end","font-size":11,fill:ink},grid).textContent=p;}
+  const sc=mode==="phys"?1:JMAX, tt=T*sc, raw=tt/4, mag=Math.pow(10,Math.floor(Math.log10(raw))), nm=raw/mag;
+  const step=(nm<1.5?1:nm<3.5?2:nm<7.5?5:10)*mag;
+  for(let k=0;k*step<=tt+1e-9;k++){el("text",{x:px(k*step/sc),y:P.h-P.b+13,"text-anchor":"middle","font-size":11,fill:ink},grid).textContent=+(k*step).toFixed(6);}
+  el("text",{x:(P.l+P.w-P.r)/2,y:P.h-3,"text-anchor":"middle","font-size":11,fill:ink},grid).textContent=mode==="phys"?"time (µs)":"time (1/J_max)";}
+function path(arr){let d="";for(let i=0;i<=N;i++)d+=(i?"L":"M")+px(T*i/N).toFixed(1)+" "+py(arr[i]).toFixed(1);return d;}
+function drawCurves(){curves.innerHTML="";
+  el("path",{d:path(data.free),stroke:css("--muted"),"stroke-dasharray":"4 4"},curves);
+  el("path",{d:path(data.one),stroke:css("--violet")},curves);
+  el("path",{d:path(data.two),stroke:css("--amber")},curves);}
+
+// ---- scene ----
+const scene=$("scene"), disks=$("disks"), atoms=$("atoms");
+const glow=[], core=[], disk=[];
+for(let i=0;i<2;i++){
+  disk.push(el("circle",{cy:CY,"stroke-opacity":.45,"stroke-dasharray":"2 4"},disks));
+  glow.push(el("circle",{cy:CY,r:16},atoms));
+  core.push(el("circle",{cy:CY,r:6,"stroke-width":2,style:"cursor:grab"},atoms));
+}
+function recolor(){
+  scene.style.color=css("--ink");plot.style.color=css("--ink");
+  for(let i=0;i<2;i++){disk[i].setAttribute("fill",css("--violet-soft"));disk[i].setAttribute("stroke",css("--violet"));
+    glow[i].setAttribute("fill",css("--violet"));core[i].setAttribute("fill",css("--ink"));core[i].setAttribute("stroke",css("--panel"));}
+}
+function atomX(i){return CX+(i?1:-1)*R*S/2;}
+function drawScene(){
+  const rb=data.Rb*S/2;
+  for(let i=0;i<2;i++){const x=atomX(i);disk[i].setAttribute("cx",x);disk[i].setAttribute("r",rb);
+    glow[i].setAttribute("cx",x);core[i].setAttribute("cx",x);}
+  const l=$("rline");l.setAttribute("x1",atomX(0)+10);l.setAttribute("x2",atomX(1)-10);l.setAttribute("y1",CY+22);l.setAttribute("y2",CY+22);
+  const rl=$("rlabel");rl.setAttribute("x",CX);rl.setAttribute("y",CY+36);rl.textContent=mode==="phys"?"R = "+R.toFixed(1)+" µm":"r = "+(R/RMIN).toFixed(2);
+}
+function updateTime(){
+  const i=Math.min(N,Math.round(tau/T*N)), pa=data.one[i]/2+data.two[i];
+  for(let k=0;k<2;k++){glow[k].setAttribute("fill-opacity",(0.08+0.62*pa).toFixed(3));glow[k].setAttribute("r",(10+10*pa).toFixed(1));}
+  cursor.setAttribute("x1",px(tau));cursor.setAttribute("x2",px(tau));
+  $("tlabel").textContent=mode==="phys"?"t = "+tau.toFixed(2)+" µs":"t = "+(tau*JMAX).toFixed(1);
+}
+const fmt=x=>x>=100?x.toFixed(0):x>=10?x.toFixed(1):x>=1?x.toFixed(2):x.toPrecision(2);
+function updateText(){
+  if(mode==="phys"){
+    $("rlab").innerHTML="Distance R";$("olab").innerHTML="Rabi frequency Ω/2π";
+    $("kV").innerHTML="V/2π";$("kRb").innerHTML="R<sub>b</sub>";$("sbar").textContent="5 µm";
+    $("rv").textContent=R.toFixed(1)+" µm";$("ov").textContent=f.toFixed(2)+" MHz";
+    $("vv").textContent=fmt(data.V/(2*Math.PI))+" MHz";$("rbv").textContent=data.Rb.toFixed(1)+" µm";
+  }else{
+    $("rlab").innerHTML="Distance r = R/r<sub>min</sub>";$("olab").innerHTML="Rabi frequency Ω/J<sub>max</sub>";
+    $("kV").innerHTML="J = V/J<sub>max</sub>";$("kRb").innerHTML="r<sub>b</sub>";$("sbar").textContent="r = 1";
+    $("rv").textContent=(R/RMIN).toFixed(2);$("ov").textContent=fmt(data.Om/JMAX);
+    $("vv").textContent=fmt(data.V/JMAX);$("rbv").textContent=(data.Rb/RMIN).toFixed(2);
+  }
+  $("rbopt").value=data.Rb.toFixed(1);
+  $("ratio").textContent=fmt(data.V/data.Om);
+  const q=R/data.Rb, d=$("sdot"), s=$("stext");
+  if(q<0.85){d.style.background=css("--violet");s.textContent="Blockaded: the atoms share a single excitation";}
+  else if(q<1.2){d.style.background="linear-gradient(90deg,"+css("--violet")+" 50%,"+css("--amber")+" 50%)";s.textContent="Near the blockade radius: partial blockade";}
+  else{d.style.background=css("--amber");s.textContent="Independent: each atom oscillates on its own";}
+}
+function refresh(){compute();drawScene();drawCurves();updateText();updateTime();}
+
+// ---- interaction ----
+$("rs").addEventListener("input",e=>{R=+e.target.value;refresh();});
+$("os").addEventListener("input",e=>{f=+e.target.value;refresh();});
+let dragging=false;
+function toUser(ev){const p=scene.createSVGPoint();p.x=ev.clientX;p.y=ev.clientY;return p.matrixTransform(scene.getScreenCTM().inverse());}
+scene.addEventListener("pointerdown",ev=>{dragging=true;scene.classList.add("dragging");scene.setPointerCapture(ev.pointerId);move(ev);});
+scene.addEventListener("pointermove",ev=>{if(dragging)move(ev);});
+const end=()=>{dragging=false;scene.classList.remove("dragging");};
+scene.addEventListener("pointerup",end);scene.addEventListener("pointercancel",end);
+function move(ev){const u=toUser(ev);R=Math.min(15,Math.max(5,Math.round(2*Math.abs(u.x-CX)/S*10)/10));$("rs").value=R;refresh();}
+
+root.querySelectorAll(".units button").forEach(b=>b.addEventListener("click",()=>{
+  mode=b.dataset.mode;root.querySelectorAll(".units button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+  drawGrid();refresh();}));
+const btn=$("play"), setBtn=()=>btn.textContent=playing?"Pause":"Play";
+btn.addEventListener("click",()=>{playing=!playing;last=null;setBtn();if(playing)play();});
+let raf=0;
+function loop(ts){raf=0;if(!playing)return;if(last!==null){tau=(tau+(ts-last)/1000*(T/6))%T;}last=ts;updateTime();raf=requestAnimationFrame(loop);}
+const play=()=>{if(!raf)raf=requestAnimationFrame(loop);};
+
+// Follow the site's sun/moon toggle (PaperMod sets data-theme on <html>).
+new MutationObserver(()=>{recolor();drawGrid();refresh();}).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+
+recolor();drawGrid();refresh();setBtn();
+if(!playing){tau=T/3;updateTime();}else play();
+})();
+</script>
+</div>

@@ -1,0 +1,163 @@
+<div class="qb">
+<style>
+.qb{--panel:var(--entry);--ink:var(--primary);--muted:var(--secondary);--line:var(--border);--c:var(--accent);--violet:#5B63A6;--bad:#B3261E;margin:16px 0}
+:root[data-theme="dark"] .qb{--violet:#8088D0;--bad:#F28B82}
+.qb .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.qb svg{display:block;width:100%;height:auto}
+.qb .panels{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.qb .panels.mats{grid-template-columns:1fr}
+@media (max-width:560px){.qb .panels{grid-template-columns:1fr}}
+.qb .plot-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;flex-wrap:wrap}
+.qb .plot-head span{font-family:var(--font-serif);font-weight:600;font-size:1rem}
+.qb table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:.85rem;font-variant-numeric:tabular-nums;margin:0}
+.qb th,.qb td{border:0;padding:2px 2px;text-align:center;white-space:nowrap;overflow:hidden}
+.qb th{color:var(--muted);font-weight:500;font-family:var(--font-serif);font-style:italic}
+.qb td.d{font-weight:600}
+.qb td.m{color:var(--muted)}
+.qb input[type=number]{width:100%;min-width:0;max-width:5.4em;box-sizing:border-box;font:inherit;font-size:.85rem;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:6px;padding:2px 3px;text-align:center;font-variant-numeric:tabular-nums}
+.qb input[type=number]:focus-visible,.qb button:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+.qb td.d input{font-weight:600}
+.qb button{font:inherit;font-size:.85rem;font-weight:500;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 12px;cursor:pointer}
+.qb .buttons{display:flex;gap:6px}
+.qb .status{font-size:.9rem;margin-top:8px;min-height:1.4em}
+.qb .status.bad{color:var(--bad)}
+.qb .readouts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+@media (max-width:500px){.qb .readouts{grid-template-columns:repeat(2,1fr)}}
+.qb .readout{border-top:2px solid var(--line);padding-top:4px}
+.qb .readout .k{font-family:var(--font-serif);font-style:italic;color:var(--muted);font-size:.9rem}
+.qb .readout .v{font-size:1rem;font-weight:600;font-variant-numeric:tabular-nums}
+.qb .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.qb .fine{font-size:.82rem;color:var(--muted);margin-top:10px}
+</style>
+
+<div class="panels mats">
+  <div class="panel">
+    <div class="plot-head"><span>The matrix Q</span><div class="buttons"><button type="button" data-preset="table">Table 4.1</button><button type="button" data-preset="remark">Q₀₃ = 0.3</button></div></div>
+    <table aria-label="The QUBO matrix; the upper triangle and the diagonal can be edited, the lower triangle mirrors them">
+      <tr><th></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>
+      <tr><th>0</th><td class="d"><input id="qbq00" type="number" step="0.01" min="-1" max="1"></td><td><input id="qbq01" type="number" step="0.001" min="0" max="1"></td><td><input id="qbq02" type="number" step="0.001" min="0" max="1"></td><td><input id="qbq03" type="number" step="0.001" min="0" max="1"></td><td><input id="qbq04" type="number" step="0.001" min="0" max="1"></td></tr>
+      <tr><th>1</th><td class="m" id="qbs10"></td><td class="d"><input id="qbq11" type="number" step="0.01" min="-1" max="1"></td><td><input id="qbq12" type="number" step="0.001" min="0" max="1"></td><td><input id="qbq13" type="number" step="0.001" min="0" max="1"></td><td><input id="qbq14" type="number" step="0.001" min="0" max="1"></td></tr>
+      <tr><th>2</th><td class="m" id="qbs20"></td><td class="m" id="qbs21"></td><td class="d"><input id="qbq22" type="number" step="0.01" min="-1" max="1"></td><td><input id="qbq23" type="number" step="0.001" min="0" max="1"></td><td><input id="qbq24" type="number" step="0.001" min="0" max="1"></td></tr>
+      <tr><th>3</th><td class="m" id="qbs30"></td><td class="m" id="qbs31"></td><td class="m" id="qbs32"></td><td class="d"><input id="qbq33" type="number" step="0.01" min="-1" max="1"></td><td><input id="qbq34" type="number" step="0.001" min="0" max="1"></td></tr>
+      <tr><th>4</th><td class="m" id="qbs40"></td><td class="m" id="qbs41"></td><td class="m" id="qbs42"></td><td class="m" id="qbs43"></td><td class="d"><input id="qbq44" type="number" step="0.01" min="-1" max="1"></td></tr>
+    </table>
+    <div class="status" id="qbnote">Couplings in [0, 1], the diagonal in [−1, 1]. Q is normalised by its largest coupling before the embedding.</div>
+  </div>
+  <div class="panel">
+    <div class="plot-head"><span>The register: couplings J<sub>ij</sub> = r<sub>ij</sub><sup>−6</sup></span></div>
+    <table aria-label="The interaction matrix of the embedded register, each coupling coloured by its mismatch with Q; the diagonal shows the final detunings">
+      <tr><th></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>
+      <tr><th>0</th><td class="d" id="qbj00"></td><td id="qbj01"></td><td id="qbj02"></td><td id="qbj03"></td><td id="qbj04"></td></tr>
+      <tr><th>1</th><td id="qbj10"></td><td class="d" id="qbj11"></td><td id="qbj12"></td><td id="qbj13"></td><td id="qbj14"></td></tr>
+      <tr><th>2</th><td id="qbj20"></td><td id="qbj21"></td><td class="d" id="qbj22"></td><td id="qbj23"></td><td id="qbj24"></td></tr>
+      <tr><th>3</th><td id="qbj30"></td><td id="qbj31"></td><td id="qbj32"></td><td class="d" id="qbj33"></td><td id="qbj34"></td></tr>
+      <tr><th>4</th><td id="qbj40"></td><td id="qbj41"></td><td id="qbj42"></td><td id="qbj43"></td><td class="d" id="qbj44"></td></tr>
+    </table>
+    <div class="status">Diagonal: the final detunings δ<sub>i</sub> = −Q<sub>ii</sub>. Red shading marks the pairs where the atoms miss the matrix.</div>
+  </div>
+</div>
+
+<div class="panels">
+  <div class="panel">
+    <svg id="qbs" viewBox="0 0 300 260" role="img" aria-label="Five atoms placed by the embedder, joined by lines whose thickness follows the coupling, each labelled with its final detuning"></svg>
+  </div>
+  <div class="panel">
+    <div class="plot-head"><span>Ground state against the optimum</span></div>
+    <table aria-label="Ground state of the register and optimum of the QUBO, with their energies and the margin to the runner-up">
+      <tr><th style="text-align:left">register, lowest energy</th><td class="mono" id="qbgs"></td><td id="qbge"></td></tr>
+      <tr><th style="text-align:left">QUBO, lowest cost</th><td class="mono" id="qbopt"></td><td id="qboe"></td></tr>
+      <tr><th style="text-align:left">margin to the runner-up</th><td class="mono" id="qbru"></td><td id="qbmargin"></td></tr>
+    </table>
+    <div class="status" id="qbstat"></div>
+    <div class="plot-head" style="margin-top:10px"><span>The diagonal with the DMM</span></div>
+    <div class="status" style="margin-top:0">δ<sub>f</sub> = max δ<sub>k</sub>, Δ = min δ<sub>k</sub> − δ<sub>f</sub>, ε<sub>i</sub> = (δ<sub>i</sub> − δ<sub>f</sub>)/Δ: weights ε = (<span id="qbeps"></span>).</div>
+  </div>
+</div>
+
+<div class="readouts">
+  <div class="readout"><div class="k">largest mismatch |Q<sub>ij</sub> − J<sub>ij</sub>|</div><div class="v" id="qbmm"></div></div>
+  <div class="readout"><div class="k">global final detuning δ<sub>f</sub></div><div class="v" id="qbdf"></div></div>
+  <div class="readout"><div class="k">DMM waveform Δ</div><div class="v" id="qbdel"></div></div>
+  <div class="readout"><div class="k">DMM budget Σ ε<sub>i</sub>|Δ|</div><div class="v" id="qbbud"></div></div>
+</div>
+
+<p>With the drive off, a bitstring of the register costs Σ<sub>i&lt;j</sub> J<sub>ij</sub> x<sub>i</sub>x<sub>j</sub> − Σ<sub>i</sub> δ<sub>i</sub> x<sub>i</sub>, which is a QUBO with Q<sub>ij</sub> = J<sub>ij</sub> and Q<sub>ii</sub> = −δ<sub>i</sub>. Embedding a matrix means finding positions whose r<sub>ij</sub><sup>−6</sup> reproduce its couplings; the diagonal is then written in the detunings, with the DMM lowering each atom from the global δ<sub>f</sub> to its own target. Five points of the plane have seven free distances, a 5×5 matrix has ten couplings, so an embedding is exact only for some matrices and approximate otherwise. The matrix of the chapter embeds; raise Q<sub>03</sub> to 0.3 and the embedder reproduces the new entry but pays for it elsewhere, and the register then solves a nearby problem. Edit any entry and watch the register, the mismatch, the detunings and the ground state follow.</p>
+<p class="fine">Interaction embedder: Σ<sub>i&lt;j</sub> (Q<sub>ij</sub> − r<sub>ij</sub><sup>−6</sup>)² minimised by gradient descent from twelve seeded random starts, each first settled on the log-distance stress Σ (6 log r<sub>ij</sub> + log Q<sub>ij</sub>)² and then polished on the mismatch itself, the best kept and reused as a warm start when an entry is edited, then rescaled so that the closest pair sits at r = 1 and centred. Every pair interacts, tails included. Ground states and optima by brute force over the 32 bitstrings, listed with variable 0 on the left; the margin is the energy difference to the runner-up of the register. The budget is compared with the 2.27 of the AnalogDeviceWithDMM in canonical units. Positions are not unique: a rotation or a reflection of the register realises the same matrix.</p>
+
+<script>
+(function(){
+const root=document.querySelector(".qb"), $=id=>root.querySelector("#"+id);
+const NS="http://www.w3.org/2000/svg", el=(tag,attrs,parent)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent.appendChild(e);return e;};
+const css=v=>getComputedStyle(root).getPropertyValue(v).trim();
+const N=5, D=1<<N, BUDGET=2.27, CX=150, CY=128, S=62;
+const TABLE=[[-0.5,1,0.282,0.011,0.074],[1,-0.3,0.233,0.233,0.009],[0.282,0.233,-0.6,0.078,0.308],[0.011,0.233,0.078,-0.2,0.002],[0.074,0.009,0.308,0.002,0.2]];
+let Q=TABLE.map(r=>r.slice());
+const minus=s=>s.replace("-","−");
+
+// ponytail: gradient descent, 5 atoms; swap for a proper optimiser if N grows.
+// Two stages: a log-distance stress Σ (6 log r + log Q)², scale free and well conditioned, finds the arrangement; the true mismatch Σ (Q − r⁻⁶)² polishes it.
+// Each step moves no atom by more than 0.05, otherwise the r⁻⁸ gradient of the polish throws a slightly-too-close pair to infinity, where the loss is also low.
+const R=(x,i,j)=>Math.hypot(x[i][0]-x[j][0],x[i][1]-x[j][1]);
+function pairs(x,q,res,der){const g=x.map(()=>[0,0]);let L=0;
+  for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){const dx=x[i][0]-x[j][0],dy=x[i][1]-x[j][1],r=Math.hypot(dx,dy),d=res(r,q[i][j]),f=der(r,q[i][j],d);L+=d*d;
+    g[i][0]+=f*dx;g[i][1]+=f*dy;g[j][0]-=f*dx;g[j][1]-=f*dy;}
+  return {L,g};}
+const STRESS=[(r,q)=>6*Math.log(r)+Math.log(q),(r,q,d)=>12*d/(r*r)], MISMATCH=[(r,q)=>q-Math.pow(r,-6),(r,q,d)=>12*d*Math.pow(r,-8)];
+function descend(x,q,[res,der],iters){let step=0.01,{L,g}=pairs(x,q,res,der);
+  for(let it=0;it<iters;it++){const gm=Math.max(...g.map(v=>Math.hypot(v[0],v[1]))),h=Math.min(step,0.05/gm),y=x.map((p,i)=>[p[0]-h*g[i][0],p[1]-h*g[i][1]]),t=pairs(y,q,res,der);
+    if(t.L<L){x=y;L=t.L;g=t.g;step*=1.2;}else step*=0.5;if(step<1e-14)break;}
+  return {x,L};}
+let warm=null;
+function embed(q){let seed=7;const rnd=()=>{seed=(seed*1103515245+12345)%2147483648;return seed/2147483648;};
+  const starts=warm?[warm]:[];
+  while(starts.length<13){const x=Array.from({length:N},()=>[rnd()*3-1.5,rnd()*3-1.5]);let ok=true;for(let i=0;i<N;i++)for(let j=i+1;j<N;j++)if(R(x,i,j)<0.5)ok=false;if(ok)starts.push(x);}
+  let best=null;
+  for(const s of starts){const x=s===warm?s:descend(s,q,STRESS,2000).x, r=descend(x,q,MISMATCH,3000);if(!best||r.L<best.L)best=r;}
+  warm=best.x;let m=Infinity;for(let i=0;i<N;i++)for(let j=i+1;j<N;j++)m=Math.min(m,R(best.x,i,j));
+  const cx=best.x.reduce((a,p)=>a+p[0],0)/N, cy=best.x.reduce((a,p)=>a+p[1],0)/N;
+  return best.x.map(p=>[(p[0]-cx)/m,(p[1]-cy)/m]);} // closest pair at r = 1, centred
+
+const bits=x=>Array.from({length:N},(_,i)=>x>>i&1).join("");
+function brute(cost){const e=Array.from({length:D},(_,x)=>cost(x)), o=Array.from({length:D},(_,x)=>x).sort((a,b)=>e[a]-e[b]);return {gs:o[0],ru:o[1],e0:e[o[0]],e1:e[o[1]]};}
+
+function draw(){
+  const scale=Math.max(...Q.flatMap((r,i)=>r.filter((_,j)=>j!==i))), q=scale>0?Q.map((r,i)=>r.map((v,j)=>i===j?v:v/scale)):Q.map(r=>r.slice());
+  const pos=embed(q.map(r=>r.map(v=>Math.max(v,1e-4)))), J=Array.from({length:N},(_,i)=>Array.from({length:N},(_,j)=>i===j?0:Math.pow(Math.hypot(pos[i][0]-pos[j][0],pos[i][1]-pos[j][1]),-6)));
+  const del=q.map((r,i)=>-r[i]), df=Math.max(...del), dl=Math.min(...del)-df, eps=del.map(d=>dl<0?(d-df)/dl:0), bud=eps.reduce((a,e)=>a+e*Math.abs(dl),0);
+  let mm=0;for(let i=0;i<N;i++)for(let j=i+1;j<N;j++)mm=Math.max(mm,Math.abs(q[i][j]-J[i][j]));
+  const reg=brute(x=>{let e=0;for(let i=0;i<N;i++)if(x>>i&1){e-=del[i];for(let j=i+1;j<N;j++)if(x>>j&1)e+=J[i][j];}return e;});
+  const qu=brute(x=>{let e=0;for(let i=0;i<N;i++)if(x>>i&1){e+=q[i][i];for(let j=i+1;j<N;j++)if(x>>j&1)e+=q[i][j];}return e;});
+  const ink=css("--ink"), c=css("--c"), mu=css("--muted"), line=css("--line"), panel=css("--panel"), violet=css("--violet"), bad=css("--bad");
+  // matrices
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){if(j<i)$("qbs"+i+j).textContent=Q[i][j].toFixed(3);
+    const t=$("qbj"+i+j);if(i===j){t.textContent=minus(del[i].toFixed(2));t.style.background="";}
+    else{const e=Math.abs(q[i][j]-J[i][j]);t.textContent=J[i][j].toFixed(3);t.style.background=e<0.005?"":"color-mix(in srgb, "+bad+" "+Math.min(60,Math.round(600*e))+"%, transparent)";}}
+  // register
+  const svg=$("qbs");svg.innerHTML="";svg.style.color=ink;const px=i=>CX+S*pos[i][0], py=i=>CY-S*pos[i][1];
+  for(let i=0;i<N;i++)for(let j=i+1;j<N;j++)el("line",{x1:px(i),y1:py(i),x2:px(j),y2:py(j),stroke:c,"stroke-width":(0.4+4*J[i][j]).toFixed(2),"stroke-opacity":Math.min(1,0.25+J[i][j]).toFixed(2)},svg);
+  for(let i=0;i<N;i++){const on=reg.gs>>i&1;
+    el("circle",{cx:px(i),cy:py(i),r:11,fill:on?violet:line,stroke:on?violet:mu,"stroke-width":1.5},svg);
+    el("text",{x:px(i),y:py(i)+3.5,"text-anchor":"middle","font-size":9.5,"font-weight":600,fill:on?panel:ink},svg).textContent=i;
+    el("text",{x:px(i)+14,y:py(i)-8,"font-size":9.5,fill:mu,stroke:panel,"stroke-width":3,"paint-order":"stroke"},svg).textContent="δ = "+minus(del[i].toFixed(2));}
+  el("g",{transform:"translate(14,248)"},svg).innerHTML='<line x1="0" x2="'+S+'" y1="0" y2="0" stroke="'+ink+'" stroke-opacity=".5" stroke-width="2"/><text x="'+S/2+'" y="-6" text-anchor="middle" font-size="11" fill="'+mu+'">r = 1</text>';
+  el("text",{x:286,y:252,"text-anchor":"end","font-size":10.5,fill:violet},svg).textContent="filled: the ground state";
+  // readouts
+  $("qbmm").textContent=mm.toFixed(mm<0.01?4:3);$("qbdf").textContent=minus(df.toFixed(2));$("qbdel").textContent=minus(dl.toFixed(2));$("qbbud").textContent=bud.toFixed(2)+" of "+BUDGET;
+  $("qbeps").textContent=eps.map(e=>+e.toFixed(3)).join(", ");
+  $("qbgs").textContent=bits(reg.gs);$("qbge").textContent="E = "+minus(reg.e0.toFixed(3));
+  $("qbopt").textContent=bits(qu.gs);$("qboe").textContent="f = "+minus(qu.e0.toFixed(3));
+  $("qbru").textContent=bits(reg.ru);$("qbmargin").textContent=(reg.e1-reg.e0).toFixed(2);
+  const st=$("qbstat"), same=reg.gs===qu.gs;st.className="status"+(same?"":" bad");
+  st.textContent=(same?"The register solves the problem: its ground state is the optimum of the QUBO, "+(bud>BUDGET?"but the DMM budget exceeds the device's.":"with a margin of "+(reg.e1-reg.e0).toFixed(2)+" over "+bits(reg.ru)+".")
+    :"The register solves a nearby problem: its ground state "+bits(reg.gs)+" is not the optimum "+bits(qu.gs)+" of the QUBO. Score the shots with the original cost.")
+    +(mm>0.02?" Largest mismatch "+mm.toFixed(3)+": the embedding is approximate.":"");
+}
+function load(){for(let i=0;i<N;i++)for(let j=i;j<N;j++)$("qbq"+i+j).value=Q[i][j];draw();}
+for(let i=0;i<N;i++)for(let j=i;j<N;j++)$("qbq"+i+j).addEventListener("input",e=>{const v=+e.target.value;if(!isFinite(v))return;
+  Q[i][j]=i===j?Math.min(1,Math.max(-1,v)):Math.min(1,Math.max(0,v));Q[j][i]=Q[i][j];draw();});
+root.querySelectorAll("[data-preset]").forEach(b=>b.addEventListener("click",()=>{Q=TABLE.map(r=>r.slice());if(b.dataset.preset==="remark"){Q[0][3]=Q[3][0]=0.3;}load();}));
+new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+load();
+})();
+</script>
+</div>

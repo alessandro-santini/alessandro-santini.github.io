@@ -1,0 +1,192 @@
+<div class="anl">
+<style>
+.anl{--panel:var(--entry);--ink:var(--primary);--muted:var(--secondary);--line:var(--border);--c:var(--accent);--violet:#5B63A6;--bad:#B3261E;margin:16px 0}
+:root[data-theme="dark"] .anl{--violet:#8088D0;--bad:#F28B82}
+.anl .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.anl svg{display:block;width:100%;height:auto;touch-action:none}
+.anl svg g:focus{outline:none}
+.anl svg g:focus-visible circle.core{stroke:var(--c);stroke-width:3}
+.anl .controls{display:grid;grid-template-columns:2fr 1fr auto;gap:8px 20px;align-items:end;margin:12px 0}
+@media (max-width:560px){.anl .controls{grid-template-columns:1fr}}
+.anl .control label{display:flex;justify-content:space-between;font-size:.9rem}
+.anl .control label span:last-child{font-variant-numeric:tabular-nums;color:var(--muted)}
+.anl input[type=range]{width:100%;accent-color:var(--c);height:24px}
+.anl button{font:inherit;font-size:.9rem;font-weight:500;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:999px;padding:5px 14px;cursor:pointer;margin:0 0 2px}
+.anl button:focus-visible,.anl input:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+.anl .panels{display:grid;grid-template-columns:3fr 2fr;gap:10px;margin-bottom:10px}
+@media (max-width:560px){.anl .panels{grid-template-columns:1fr}}
+.anl .plot-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.anl .plot-head span{font-family:var(--font-serif);font-weight:600;font-size:1rem}
+.anl .status{font-size:.9rem;margin-top:8px;min-height:1.4em}
+.anl .status.bad{color:var(--bad)}
+.anl .legend{display:flex;gap:16px;font-size:.82rem;color:var(--muted);margin-top:4px;flex-wrap:wrap}
+.anl .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.anl .stale{opacity:.4}
+.anl .readouts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+@media (max-width:500px){.anl .readouts{grid-template-columns:repeat(2,1fr)}}
+.anl .readout{border-top:2px solid var(--line);padding-top:4px}
+.anl .readout .k{font-family:var(--font-serif);font-style:italic;color:var(--muted);font-size:.9rem}
+.anl .readout .v{font-size:1rem;font-weight:600;font-variant-numeric:tabular-nums}
+.anl .fine{font-size:.82rem;color:var(--muted);margin-top:10px}
+</style>
+
+<div class="controls">
+  <div class="control">
+    <label for="ant"><span>Duration T (log slider)</span><span id="antv"></span></label>
+    <input id="ant" type="range" min="0.699" max="2.477" step="0.001" value="2" list="ant-ticks">
+    <datalist id="ant-ticks"><option value="0.699"></option><option value="1"></option><option value="1.301"></option><option value="1.699"></option><option value="2"></option><option value="2.301"></option><option value="2.477"></option></datalist>
+  </div>
+  <div class="readout"><div class="k">sweep rate v</div><div class="v" id="anv"></div></div>
+  <button id="anreset" type="button">Reset atoms</button>
+</div>
+
+<div class="panels">
+  <div class="panel">
+    <svg id="ans" viewBox="0 0 300 260" role="group" aria-label="Seven draggable atoms, starting from the register of Stop 4. Each atom is shaded by its probability of being excited at the end of the sweep; the atoms of the maximum independent set are outlined when it is unique. Each atom can be focused and moved with the arrow keys."></svg>
+    <div class="status" id="anstat"></div>
+  </div>
+  <div class="panel">
+    <div class="plot-head"><span>Final state, most likely bitstrings</span></div>
+    <svg id="anb" role="img" aria-label="Bar chart of the most probable bitstrings at the end of the sweep"></svg>
+    <div class="legend"><span><i style="background:var(--violet)"></i>MIS</span><span><i style="background:var(--c);opacity:.45"></i>independent set</span><span><i style="background:var(--bad)"></i>not independent</span></div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="plot-head"><span>Final state against the duration T</span></div>
+  <svg id="anc" viewBox="0 0 640 220" role="img" aria-label="Probability of an independent set, of the maximum independent set and of no excitation at all at the end of the sweep, against the duration T on a logarithmic axis"></svg>
+  <div class="legend"><span><i style="background:var(--c)"></i>independent set</span><span><i style="background:var(--violet)"></i>maximum independent set</span><span><i style="background:var(--muted)"></i>all in g</span><span id="anhov"></span></div>
+</div>
+
+<div class="readouts">
+  <div class="readout"><div class="k">P(independent set)</div><div class="v" id="anis"></div></div>
+  <div class="readout"><div class="k">P(MIS)</div><div class="v" id="anmis"></div></div>
+  <div class="readout"><div class="k">mean excited atoms</div><div class="v" id="ann"></div></div>
+  <div class="readout"><div class="k">P(all in g)</div><div class="v" id="anp0"></div></div>
+</div>
+
+<p>Knowing the ground state is one thing, reaching it is another. The register starts as the seven-atom one of the hands-on, driven at Ω = 0.15 so that its blockade graph has the unique maximum independent set {2, 3, 6, 7}. The drive ramps the amplitude up during the first fifth of T, holds it, and ramps it down during the last fifth; meanwhile the detuning starts at δ<sub>0</sub> = −0.5, where every atom prefers g, and is swept to δ<sub>f</sub> = +0.5, where the maximum independent set is the ground state. The only free number is T, which sets the velocity of the sweep. Too fast and the register never leaves |g⋯g⟩, as a single atom swept through resonance too quickly stays in g. A bit slower and excitations appear, scattered, some of them on neighbouring atoms: the interaction has not had the time to enforce the blockade. Slow enough and every likely outcome is an independent set, with the maximum one taking a share that keeps growing with T. Drag the atoms to change the graph, and the maximum independent set with it; Reset puts the register back.</p>
+<p class="fine">H̃ = Σ<sub>i&lt;j</sub> J̃<sub>ij</sub> n<sub>i</sub> n<sub>j</sub> + Ω̃(t)/2 Σ<sub>i</sub> X<sub>i</sub> − δ̃(t) Σ<sub>i</sub> n<sub>i</sub> with J̃<sub>ij</sub> = r̃<sub>ij</sub><sup>−6</sup> for every pair, tails included, integrated numerically, fixed-step fourth-order Runge–Kutta on the 2<sup>7</sup> amplitudes from |g⋯g⟩ with no approximation to the model. The detuning is swept at v = (δ<sub>f</sub> − δ<sub>0</sub>)/(0.6 T). The probabilities are those of the final state, not shot frequencies. Starting coordinates from Stop 4 of chapter 2: neighbours at distance 1, every other pair at 1.72 or more, R<sub>b</sub> = 0.15<sup>−1/6</sup> = 1.37. A pair closer than r = 1 is drawn red, as the device would reject it; atoms stop at r = 0.6. The maximum independent sets are found by brute force; when there are several, P(MIS) sums over them and no atom is outlined. The empty set is an independent set, so at small T the independent-set curve is mostly |g⋯g⟩: the grey curve shows that share. The curve against T is recomputed when an atom is released. Bitstrings list atom 1 on the left. Hover the curve to read it, click to set T.</p>
+
+<script>
+(function(){
+const root=document.querySelector(".anl"), $=id=>root.querySelector("#"+id);
+const NS="http://www.w3.org/2000/svg";
+const el=(tag,attrs,parent)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent.appendChild(e);return e;};
+const css=v=>getComputedStyle(root).getPropertyValue(v).trim();
+// Stop 4 register, unique MIS {2,3,6,7}; drive of Fig. 1.7
+const X0=[0.905,0.097,1.307,0.228,-0.814,-1.243,-0.481], Y0=[0.432,-0.166,1.351,-1.162,0.254,1.162,-1.872];
+const N=7, D=1<<N, OM=0.15, D0=-0.5, DF=0.5, RB=Math.pow(OM,-1/6), DT=0.04;
+const TMIN=5, TMAX=300, GRID=[5,7,10,14,20,30,50,70,100,140,200,300];
+const S=60, CX=150-S*(Math.min(...X0)+Math.max(...X0))/2, CY=130+S*(Math.min(...Y0)+Math.max(...Y0))/2; // px per unit, origin of the plot
+let X=X0.slice(), Y=Y0.slice(), J=[], edges=[], misN=0, nMIS=0, misAtoms=0, close=0, dt0=DT;
+const diag=new Float64Array(D), nex=new Uint8Array(D), isIS=new Uint8Array(D), isMIS=new Uint8Array(D);
+function setup(){ // geometry: interactions, blockade graph, independent sets and the maximum ones
+  J=[];edges=[];close=0;
+  for(let i=0;i<N;i++){J.push([]);for(let j=0;j<N;j++){const r=Math.hypot(X[i]-X[j],Y[i]-Y[j]);J[i].push(i===j?0:Math.pow(r,-6));if(i<j&&r<RB)edges.push([i,j]);if(i<j&&r<1-1e-9)close++;}}
+  misN=0;let emax=0;
+  for(let x=0;x<D;x++){let e=0,n=0,ok=1;for(let i=0;i<N;i++)if(x>>i&1){n++;for(let j=i+1;j<N;j++)if(x>>j&1)e+=J[i][j];}
+    for(const [i,j] of edges)if((x>>i&1)&&(x>>j&1))ok=0;diag[x]=e;nex[x]=n;isIS[x]=ok;if(ok&&n>misN)misN=n;emax=Math.max(emax,e);}
+  dt0=Math.min(DT,1.5/(emax+N)); // RK4 stays stable when close pairs make the interaction large
+  nMIS=0;misAtoms=0;
+  for(let x=0;x<D;x++){isMIS[x]=isIS[x]&&nex[x]===misN?1:0;if(isMIS[x]){nMIS++;misAtoms|=x;}}}
+
+function drive(t,T){const u=t/T;return [u<0.2?OM*u/0.2:u<0.8?OM:OM*(1-u)/0.2, u<0.2?D0:u<0.8?D0+(DF-D0)*(u-0.2)/0.6:DF];}
+function hpsi(t,T,re,im,ore,oim){const [om,de]=drive(t,T), h=om/2;
+  for(let x=0;x<D;x++){const d=diag[x]-de*nex[x];let r=d*re[x],i=d*im[x];
+    for(let k=0;k<N;k++){const y=x^(1<<k);r+=h*re[y];i+=h*im[y];}ore[x]=r;oim[x]=i;}}
+function run(T){ // RK4 on dψ/dt = −iHψ from |g…g⟩; returns the final probabilities
+  const steps=Math.ceil(T/dt0), dt=T/steps;
+  const re=new Float64Array(D), im=new Float64Array(D);re[0]=1;
+  const k=[0,1,2,3].map(()=>[new Float64Array(D),new Float64Array(D)]), tr=new Float64Array(D), ti=new Float64Array(D), hr=new Float64Array(D), hi=new Float64Array(D);
+  const stage=(t,sr,si,out)=>{hpsi(t,T,sr,si,hr,hi);for(let x=0;x<D;x++){out[0][x]=hi[x];out[1][x]=-hr[x];}}; // −i(Hψ)
+  for(let s=0;s<steps;s++){const t=s*dt;
+    stage(t,re,im,k[0]);
+    for(let x=0;x<D;x++){tr[x]=re[x]+dt/2*k[0][0][x];ti[x]=im[x]+dt/2*k[0][1][x];}stage(t+dt/2,tr,ti,k[1]);
+    for(let x=0;x<D;x++){tr[x]=re[x]+dt/2*k[1][0][x];ti[x]=im[x]+dt/2*k[1][1][x];}stage(t+dt/2,tr,ti,k[2]);
+    for(let x=0;x<D;x++){tr[x]=re[x]+dt*k[2][0][x];ti[x]=im[x]+dt*k[2][1][x];}stage(t+dt,tr,ti,k[3]);
+    for(let x=0;x<D;x++){re[x]+=dt/6*(k[0][0][x]+2*k[1][0][x]+2*k[2][0][x]+k[3][0][x]);im[x]+=dt/6*(k[0][1][x]+2*k[1][1][x]+2*k[2][1][x]+k[3][1][x]);}}
+  const p=new Float64Array(D);for(let x=0;x<D;x++)p[x]=re[x]*re[x]+im[x]*im[x];return p;}
+function stats(p){let is=0,mis=0,n=0;for(let x=0;x<D;x++){if(isIS[x])is+=p[x];if(isMIS[x])mis+=p[x];n+=nex[x]*p[x];}return {is,mis,n,p0:p[0]};}
+
+let T=100, curve=null, hover=-1, stale=false, focusIdx=-1;
+const slider=$("ant"), reg=$("ans"), bars=$("anb"), chart=$("anc");
+const P={l:40,r:14,t:14,b:30,w:640,h:220}, lx=t=>P.l+(P.w-P.l-P.r)*Math.log10(t/TMIN)/Math.log10(TMAX/TMIN), ly=v=>P.h-P.b-(P.h-P.b-P.t)*v;
+const px=i=>CX+S*X[i], py=i=>CY-S*Y[i];
+
+function drawRegister(p){reg.innerHTML="";const ink=css("--ink"), c=css("--c"), panel=css("--panel"), mu=css("--muted"), line=css("--line"), bad=css("--bad");
+  const pi=Array.from({length:N},(_,i)=>{let s=0;for(let x=0;x<D;x++)if(x>>i&1)s+=p[x];return s;});
+  for(let i=0;i<N;i++)el("circle",{cx:px(i),cy:py(i),r:RB*S/2,fill:c,"fill-opacity":.05,stroke:c,"stroke-opacity":.3,"stroke-dasharray":"2 4"},reg);
+  for(const [i,j] of edges){const tooClose=Math.hypot(X[i]-X[j],Y[i]-Y[j])<1-1e-9;el("line",{x1:px(i),y1:py(i),x2:px(j),y2:py(j),stroke:tooClose?bad:c,"stroke-width":tooClose?2.5:2},reg);}
+  for(let i=0;i<N;i++){const g=el("g",{tabindex:0,"aria-label":"atom "+(i+1)+", excited with probability "+pi[i].toFixed(2)},reg);
+    g.addEventListener("focus",()=>{focusIdx=i;});g.addEventListener("blur",ev=>{if(ev.target.isConnected)focusIdx=-1;});
+    if(nMIS===1&&(misAtoms>>i&1))el("circle",{cx:px(i),cy:py(i),r:17,fill:"none",stroke:c,"stroke-width":2},g);
+    el("circle",{cx:px(i),cy:py(i),r:11,fill:line},g); // empty track, then the fill in proportion to ⟨n_i⟩
+    el("circle",{cx:px(i),cy:py(i),r:11,fill:c,"fill-opacity":Math.min(1,pi[i]),stroke:"none",class:"core",style:"cursor:grab"},g);
+    el("text",{x:px(i),y:py(i)+3.5,"text-anchor":"middle","font-size":9.5,"font-weight":600,fill:pi[i]>0.5?panel:ink,style:"pointer-events:none"},g).textContent=i+1;
+    el("text",{x:px(i)+15,y:py(i)+14,"font-size":9.5,fill:mu,stroke:panel,"stroke-width":3,"paint-order":"stroke",style:"pointer-events:none"},g).textContent=pi[i].toFixed(2);
+    if(focusIdx===i)g.focus();}
+  el("g",{transform:"translate(14,248)"},reg).innerHTML='<line x1="0" x2="60" y1="0" y2="0" stroke="'+ink+'" stroke-opacity=".5" stroke-width="2"/><text x="30" y="-6" text-anchor="middle" font-size="11" fill="'+mu+'">r = 1</text>';}
+
+function drawBars(p){bars.innerHTML="";const ink=css("--ink"), c=css("--c"), mu=css("--muted"), violet=css("--violet"), bad=css("--bad");
+  const rows=Array.from({length:D},(_,x)=>x).sort((a,b)=>p[b]-p[a]).slice(0,8), x0=66, x1=172;
+  bars.setAttribute("viewBox","0 0 220 "+(rows.length*18+8));bars.style.color=ink;
+  rows.forEach((x,k)=>{const y=k*18+4, m=isMIS[x], col=m?violet:isIS[x]?c:bad, bits=Array.from({length:N},(_,i)=>x>>i&1).join("");
+    el("text",{x:4,y:y+10.5,"font-size":10.5,"font-family":"ui-monospace,SFMono-Regular,Menlo,monospace","font-weight":m?600:400,fill:m?ink:mu},bars).textContent=bits;
+    el("rect",{x:x0,y:y+1,width:Math.max(1,p[x]*(x1-x0)),height:12,rx:2,fill:col,"fill-opacity":m||!isIS[x]?1:.45},bars);
+    el("text",{x:216,y:y+10.5,"text-anchor":"end","font-size":10,fill:m?ink:mu,"font-weight":m?600:400},bars).textContent=(100*p[x]).toFixed(1)+" %";});}
+
+function drawChart(){chart.innerHTML="";P.w=matchMedia("(max-width:560px)").matches?360:640;chart.setAttribute("viewBox","0 0 "+P.w+" "+P.h); // a 640 px plot scaled to a phone makes the labels unreadable
+  const ink=css("--ink"), c=css("--c"), mu=css("--muted"), line=css("--line"), violet=css("--violet"), panel=css("--panel");
+  chart.setAttribute("class",stale?"stale":"");
+  for(let v=0;v<=1.001;v+=0.25){el("line",{x1:P.l,x2:P.w-P.r,y1:ly(v),y2:ly(v),stroke:line},chart);
+    el("text",{x:P.l-6,y:ly(v)+4,"text-anchor":"end","font-size":11,fill:mu},chart).textContent=v.toFixed(2);}
+  for(const t of [5,10,20,50,100,200,300]){el("line",{x1:lx(t),x2:lx(t),y1:P.t,y2:P.h-P.b,stroke:line},chart);
+    el("text",{x:lx(t),y:P.h-P.b+14,"text-anchor":"middle","font-size":11,fill:mu},chart).textContent=t;}
+  el("text",{x:(P.l+P.w-P.r)/2,y:P.h-3,"text-anchor":"middle","font-size":11,fill:mu},chart).textContent="duration T";
+  el("line",{x1:lx(T),x2:lx(T),y1:P.t,y2:P.h-P.b,stroke:ink,"stroke-opacity":.6,"stroke-dasharray":"4 3"},chart);
+  for(const [key,col,label] of [["p0",mu,"all in g"],["is",c,"independent set"],["mis",violet,"MIS"]]){
+    el("path",{d:curve.map((q,k)=>(k?"L":"M")+lx(q.T).toFixed(1)+" "+ly(q[key]).toFixed(1)).join(""),fill:"none",stroke:col,"stroke-width":2},chart);
+    curve.forEach((q,k)=>el("circle",{cx:lx(q.T),cy:ly(q[key]),r:k===hover?5:3.5,fill:col,stroke:panel,"stroke-width":2},chart));
+    const q=key==="is"?curve[6]:key==="p0"?curve[0]:curve[curve.length-1];
+    el("text",{x:lx(q.T)-(key==="is"?0:key==="p0"?-6:6),y:ly(q[key])+(key==="is"?16:-9),"text-anchor":key==="is"?"middle":key==="p0"?"start":"end","font-size":10.5,fill:col,"font-weight":600},chart).textContent=label;}
+  chart.style.color=ink;}
+
+function draw(){const p=run(T), s=stats(p), f=x=>x.toFixed(2);
+  $("antv").textContent=T.toFixed(T<20?1:0);$("anv").textContent=((DF-D0)/(0.6*T)).toFixed(4);
+  $("anis").textContent=f(s.is);$("anmis").textContent=f(s.mis);$("ann").textContent=f(s.n);$("anp0").textContent=f(s.p0);
+  const st=$("anstat");st.className="status"+(close?" bad":"");
+  st.textContent=(close?(close===1?"One pair":close+" pairs")+" closer than r = 1, the device would reject this register. ":"")+(s.p0>0.3?"Fast sweep: the register mostly stays in |g⋯g⟩, the detuning crosses resonance before the drive can act."
+    :s.is<0.9?"Scattered excitations: "+(100*(1-s.is)).toFixed(0)+" % of the final state is not an independent set, the interaction had no time to enforce the blockade."
+    :"Slow sweep: the final state is an independent set with probability "+f(s.is)+", and the maximum one takes "+f(s.mis)+", growing with T beyond this.")
+    +(nMIS>1?" "+nMIS+" maximum independent sets of "+misN+" atoms, P(MIS) sums over them.":"");
+  drawRegister(p);drawBars(p);drawChart();}
+function recurve(){curve=GRID.map(t=>({T:t,...stats(run(t))}));stale=false;}
+
+// drag an atom inside the plot; the curve is recomputed on release
+let drag=-1;
+function toUser(ev,svg){const p=svg.createSVGPoint();p.x=ev.clientX;p.y=ev.clientY;return p.matrixTransform(svg.getScreenCTM().inverse());}
+function place(i,x,y){const q=[Math.min(2.1,Math.max(-2.1,x)),Math.min((CY-20)/S,Math.max((CY-232)/S,y))];
+  if(X.every((_,k)=>k===i||Math.hypot(q[0]-X[k],q[1]-Y[k])>=0.6)){X[i]=q[0];Y[i]=q[1];setup();stale=true;draw();}} // never on top of another atom
+reg.addEventListener("pointerdown",ev=>{const u=toUser(ev,reg);let b=-1,bd=16;
+  for(let i=0;i<N;i++){const d=Math.hypot(px(i)-u.x,py(i)-u.y);if(d<bd){bd=d;b=i;}}
+  if(b>=0){drag=b;reg.setPointerCapture(ev.pointerId);}});
+reg.addEventListener("pointermove",ev=>{if(drag<0)return;const u=toUser(ev,reg);place(drag,(u.x-CX)/S,(CY-u.y)/S);});
+const release=()=>{if(drag<0)return;drag=-1;if(stale){recurve();drawChart();}};
+reg.addEventListener("pointerup",release);reg.addEventListener("pointercancel",release);
+reg.addEventListener("keydown",ev=>{const i=focusIdx;if(i<0)return;const m=0.1, k=ev.key;
+  if(k==="ArrowLeft")place(i,X[i]-m,Y[i]);else if(k==="ArrowRight")place(i,X[i]+m,Y[i]);else if(k==="ArrowUp")place(i,X[i],Y[i]+m);else if(k==="ArrowDown")place(i,X[i],Y[i]-m);else return;
+  ev.preventDefault();if(stale){recurve();drawChart();}});
+$("anreset").addEventListener("click",()=>{X=X0.slice();Y=Y0.slice();setup();recurve();draw();});
+
+const nearest=ev=>{const u=toUser(ev,chart);let b=0;curve.forEach((q,k)=>{if(Math.abs(lx(q.T)-u.x)<Math.abs(lx(curve[b].T)-u.x))b=k;});return b;};
+chart.addEventListener("pointermove",ev=>{hover=nearest(ev);const q=curve[hover];$("anhov").textContent="T = "+q.T+": "+q.is.toFixed(2)+" / "+q.mis.toFixed(2)+" / "+q.p0.toFixed(2);drawChart();});
+chart.addEventListener("pointerleave",()=>{hover=-1;$("anhov").textContent="";drawChart();});
+chart.addEventListener("click",ev=>{T=curve[nearest(ev)].T;slider.value=Math.log10(T);draw();});
+slider.addEventListener("input",e=>{T=Math.round(Math.pow(10,+e.target.value)*10)/10;draw();});
+new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+addEventListener("resize",drawChart);
+setup();recurve();draw();
+})();
+</script>
+</div>

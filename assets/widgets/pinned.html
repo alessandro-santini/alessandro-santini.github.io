@@ -1,0 +1,121 @@
+<div class="pn">
+<style>
+.pn{--panel:var(--entry);--ink:var(--primary);--muted:var(--secondary);--line:var(--border);--c:var(--accent);--violet:#5B63A6;margin:16px 0}
+:root[data-theme="dark"] .pn{--violet:#8088D0}
+.pn .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.pn svg{display:block;width:100%;height:auto}
+.pn .controls{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;margin:12px 0}
+@media (max-width:500px){.pn .controls{grid-template-columns:1fr}}
+.pn .control label{display:flex;justify-content:space-between;font-size:.9rem;margin-bottom:0}
+.pn .control label span:last-child{font-variant-numeric:tabular-nums;color:var(--muted)}
+.pn input[type=range]{width:100%;accent-color:var(--c);height:24px}
+.pn .panels{display:grid;grid-template-columns:3fr 2fr;gap:10px;margin-bottom:10px}
+@media (max-width:560px){.pn .panels{grid-template-columns:1fr}}
+.pn .plot-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.pn .plot-head span{font-family:var(--font-serif);font-weight:600;font-size:1rem}
+.pn .status{font-size:.9rem;margin-top:8px;min-height:1.4em}
+.pn .legend{display:flex;gap:16px;font-size:.82rem;color:var(--muted);margin-top:4px;flex-wrap:wrap}
+.pn .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.pn .readouts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+@media (max-width:500px){.pn .readouts{grid-template-columns:repeat(2,1fr)}}
+.pn .readout{border-top:2px solid var(--line);padding-top:4px}
+.pn .readout .k{font-family:var(--font-serif);font-style:italic;color:var(--muted);font-size:.9rem}
+.pn .readout .v{font-size:1rem;font-weight:600;font-variant-numeric:tabular-nums}
+.pn .fine{font-size:.82rem;color:var(--muted);margin-top:10px}
+.pn .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+</style>
+
+<div class="controls">
+  <div class="control">
+    <label for="pnd"><span>DMM waveform Δ</span><span id="pndv"></span></label>
+    <input id="pnd" type="range" min="-1" max="0" step="0.01" value="-0.4" list="pnd-ticks">
+    <datalist id="pnd-ticks"><option value="0"></option><option value="-0.1"></option><option value="-0.2"></option><option value="-0.4"></option><option value="-0.8"></option></datalist>
+  </div>
+  <div class="control">
+    <label for="pne"><span>Weight ε of atom 1</span><span id="pnev"></span></label>
+    <input id="pne" type="range" min="0" max="1" step="0.05" value="1">
+  </div>
+</div>
+
+<div class="panels">
+  <div class="panel">
+    <div class="plot-head"><span>Excitation during the π-pulse</span></div>
+    <svg id="pnp" viewBox="0 0 360 150" role="img" aria-label="Probability of each atom being in the Rydberg state against time during the pulse"></svg>
+    <div class="legend"><span><i style="background:var(--violet)"></i>atom 1, weight ε</span><span><i style="background:var(--c)"></i>atom 2, weight 0</span></div>
+  </div>
+  <div class="panel">
+    <div class="plot-head"><span>Final state</span></div>
+    <svg id="pns" viewBox="0 0 220 70" role="img" aria-label="Two atoms far apart, shaded by their final excitation probability; atom 1 carries the DMM weight">
+      <circle id="pnring" cx="60" cy="30" r="17" fill="none" stroke-width="3"/>
+      <circle id="pna0" cx="60" cy="30" r="11"/><circle id="pnf0" cx="60" cy="30" r="11"/>
+      <circle id="pna1" cx="160" cy="30" r="11"/><circle id="pnf1" cx="160" cy="30" r="11"/>
+      <text id="pnl0" x="60" y="33.5" text-anchor="middle" font-size="9.5" font-weight="600">1</text>
+      <text id="pnl1" x="160" y="33.5" text-anchor="middle" font-size="9.5" font-weight="600">2</text>
+      <text id="pnr" x="110" y="62" text-anchor="middle" font-size="10">r = 4, no interaction</text>
+    </svg>
+    <svg id="pnb" viewBox="0 0 220 80" role="img" aria-label="Probability of each of the four bitstrings at the end of the pulse">
+      <g id="pnbars"></g>
+      <text class="mono" x="4" y="14.5" font-size="10.5">00</text><text id="pn00" x="216" y="14.5" text-anchor="end" font-size="10"></text>
+      <text class="mono" x="4" y="32.5" font-size="10.5">01</text><text id="pn01" x="216" y="32.5" text-anchor="end" font-size="10"></text>
+      <text class="mono" x="4" y="50.5" font-size="10.5">10</text><text id="pn10" x="216" y="50.5" text-anchor="end" font-size="10"></text>
+      <text class="mono" x="4" y="68.5" font-size="10.5">11</text><text id="pn11" x="216" y="68.5" text-anchor="end" font-size="10"></text>
+    </svg>
+    <div class="status" id="pnstat"></div>
+  </div>
+</div>
+
+<div class="readouts">
+  <div class="readout"><div class="k">detuning of atom 1, εΔ</div><div class="v" id="pndel"></div></div>
+  <div class="readout"><div class="k">|εΔ|/Ω</div><div class="v" id="pnrat"></div></div>
+  <div class="readout"><div class="k">P<sub>r</sub> of atom 1 at T</div><div class="v" id="pnp1"></div></div>
+  <div class="readout"><div class="k">DMM budget Σ ε<sub>i</sub>|Δ|</div><div class="v" id="pnbud"></div></div>
+</div>
+
+<p>The global drive reaches every atom alike: a π-pulse at Ω = 0.1 takes both of these atoms from g to r. The detuning map modulator adds a per-atom term, a shared waveform Δ ≤ 0 scaled by a weight ε<sub>i</sub> ∈ [0, 1] for each atom. Atom 1 carries the weight here, atom 2 none. Atom 1 therefore sees the detuning εΔ while the pulse is resonant for atom 2, and its Rabi oscillation becomes the detuned one of chapter 1: faster, and never reaching r. The further εΔ sits from resonance compared with Ω, the less the atom moves; at |εΔ| = 4 Ω it is excited a few times in a hundred, which is what "pinned" means. The DMM only ever lowers a detuning, so to favour one atom one pins the others.</p>
+<p class="fine">Each atom follows the generalised Rabi formula P<sub>r</sub>(t) = Ω²/(Ω² + δ<sub>i</sub>²) sin²(√(Ω² + δ<sub>i</sub>²) t/2) with δ<sub>i</sub> = ε<sub>i</sub>Δ, exact for a resonant drive without decay. At r = 4 the interaction is 4<sup>−6</sup> ≈ 0.0002, far below Ω, so the pair is a product state and P(ab) is the product of the single-atom probabilities. Bitstrings list atom 1 on the left. The budget is the sum Σ<sub>i</sub> ε<sub>i</sub>|Δ| against the 2.27 of the AnalogDeviceWithDMM in canonical units; with one addressed atom it is ε|Δ|.</p>
+
+<script>
+(function(){
+const root=document.querySelector(".pn"), $=id=>root.querySelector("#"+id);
+const NS="http://www.w3.org/2000/svg", el=(tag,attrs,parent)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent.appendChild(e);return e;};
+const css=v=>getComputedStyle(root).getPropertyValue(v).trim();
+const OM=0.1, T=Math.PI/OM, BUDGET=2.27, N=300;
+const pr=(d,t)=>{const g=Math.hypot(OM,d);return OM*OM/(g*g)*Math.sin(g*t/2)**2;};
+let D=-0.4, E=1;
+
+const plot=$("pnp"), P={l:34,r:10,t:8,b:30,w:360,h:150};
+const px=t=>P.l+(P.w-P.l-P.r)*t/T, py=p=>P.t+(P.h-P.t-P.b)*(1-p);
+function drawPlot(d1){plot.innerHTML="";const mu=css("--muted"), line=css("--line"), ink=css("--ink");
+  for(const p of [0,.5,1]){el("line",{x1:P.l,x2:P.w-P.r,y1:py(p),y2:py(p),stroke:line},plot);el("text",{x:P.l-6,y:py(p)+4,"text-anchor":"end","font-size":11,fill:mu},plot).textContent=p;}
+  for(const k of [0,10,20,30]){el("text",{x:px(k),y:P.h-P.b+14,"text-anchor":"middle","font-size":11,fill:mu},plot).textContent=k;}
+  el("text",{x:(P.l+P.w-P.r)/2,y:P.h-3,"text-anchor":"middle","font-size":11,fill:mu},plot).textContent="time t, pulse ends at T = π/Ω = 31.4";
+  for(const [d,col] of [[0,css("--c")],[d1,css("--violet")]]){let s="";for(let i=0;i<=N;i++){const t=T*i/N;s+=(i?"L":"M")+px(t).toFixed(1)+" "+py(pr(d,t)).toFixed(1);}
+    el("path",{d:s,fill:"none",stroke:col,"stroke-width":2.2,"stroke-linejoin":"round"},plot);}
+  plot.style.color=ink;}
+
+function draw(){const d1=E*D, p1=pr(d1,T), p2=pr(0,T), c=css("--c"), violet=css("--violet"), line=css("--line"), ink=css("--ink"), panel=css("--panel"), mu=css("--muted");
+  $("pndv").textContent=D.toFixed(2);$("pnev").textContent=E.toFixed(2);
+  // scene: atom 1 ringed by its weight, both shaded by their final excitation probability
+  $("pnring").setAttribute("stroke",violet);$("pnring").setAttribute("stroke-opacity",(0.15+0.85*E).toFixed(2));
+  for(const [i,p] of [[0,p1],[1,p2]]){$("pna"+i).setAttribute("fill",line);$("pnf"+i).setAttribute("fill",c);$("pnf"+i).setAttribute("fill-opacity",p.toFixed(3));$("pnl"+i).setAttribute("fill",p>0.5?panel:ink);}
+  $("pnr").setAttribute("fill",mu);
+  // bars, atom 1 on the left
+  const probs=[(1-p1)*(1-p2),(1-p1)*p2,p1*(1-p2),p1*p2], bars=$("pnbars");bars.innerHTML="";
+  probs.forEach((p,k)=>{el("rect",{x:28,y:k*18+5,width:Math.max(1,p*150),height:12,rx:2,fill:c},bars);
+    const t=$("pn"+(k>>1)+(k&1));t.textContent=p.toFixed(3);t.setAttribute("fill",ink);});
+  $("pnb").style.color=ink;
+  $("pndel").textContent=d1.toFixed(2);$("pnrat").textContent=(Math.abs(d1)/OM).toFixed(1);$("pnp1").textContent=p1.toFixed(3);
+  $("pnbud").textContent=(E*Math.abs(D)).toFixed(2)+" of "+BUDGET;
+  const r=Math.abs(d1)/OM;
+  $("pnstat").textContent=d1===0?"Δ = 0 on atom 1: both atoms are driven alike and the π-pulse excites both, 11 in every shot."
+    :r<4?"Partially pinned: atom 1 is detuned by "+r.toFixed(1)+" Ω, its oscillation is faster and shallower, and it ends in r with probability "+p1.toFixed(2)+"."
+    :"Pinned: at "+r.toFixed(1)+" Ω off resonance atom 1 is excited "+(100*p1).toFixed(1)+" % of the time; the pulse acts on atom 2 alone.";
+  drawPlot(d1);}
+
+$("pnd").addEventListener("input",e=>{D=+e.target.value;draw();});
+$("pne").addEventListener("input",e=>{E=+e.target.value;draw();});
+new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+draw();
+})();
+</script>
+</div>

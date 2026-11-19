@@ -1,0 +1,139 @@
+<div class="rabi">
+<style>
+.rabi{--panel:var(--entry);--ink:var(--primary);--muted:var(--secondary);--line:var(--border);--c:var(--accent);margin:16px 0}
+.rabi .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.rabi .panels{display:grid;grid-template-columns:230px 1fr;gap:10px}
+@media (max-width:560px){.rabi .panels{grid-template-columns:1fr}}
+.rabi svg{display:block;width:100%;height:auto}
+.rabi .sphere svg{max-width:230px;margin:0 auto}
+.rabi .controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px 20px;margin:12px 0}
+@media (max-width:560px){.rabi .controls{grid-template-columns:1fr}}
+.rabi .control label{display:flex;justify-content:space-between;font-size:.9rem}
+.rabi .control label span:last-child{font-variant-numeric:tabular-nums;color:var(--muted)}
+.rabi input[type=range]{width:100%;accent-color:var(--c);height:24px}
+.rabi .readouts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.rabi .readout{border-top:2px solid var(--line);padding-top:4px}
+.rabi .readout .k{font-family:var(--font-serif);font-style:italic;color:var(--muted);font-size:.9rem}
+.rabi .readout .v{font-size:1rem;font-weight:600;font-variant-numeric:tabular-nums}
+.rabi .plot-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.rabi .plot-head span{font-family:var(--font-serif);font-weight:600;font-size:1rem}
+.rabi button{font:inherit;font-size:.9rem;font-weight:500;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:999px;padding:5px 14px;cursor:pointer}
+.rabi button:focus-visible,.rabi input:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+.rabi .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.82rem;color:var(--muted);margin-top:2px}
+.rabi .legend i{display:inline-block;width:18px;height:0;border-top:2.5px solid;vertical-align:middle;margin-right:6px}
+.rabi .fine{font-size:.82rem;color:var(--muted);margin-top:10px}
+</style>
+
+<div class="controls">
+  <div class="control">
+    <label for="ro"><span>Rabi frequency Ω/2π</span><span id="rov"></span></label>
+    <input id="ro" type="range" min="0.3" max="2" step="0.05" value="1">
+  </div>
+  <div class="control">
+    <label for="rd"><span>Detuning δ/2π</span><span id="rdv"></span></label>
+    <input id="rd" type="range" min="-3" max="3" step="0.1" value="0" list="rd-zero">
+    <datalist id="rd-zero"><option value="0"></option></datalist>
+  </div>
+  <div class="control">
+    <label for="rp"><span>Laser phase φ</span><span id="rpv"></span></label>
+    <input id="rp" type="range" min="0" max="360" step="5" value="0">
+  </div>
+</div>
+
+<div class="panels">
+  <div class="panel sphere">
+    <svg id="bs" viewBox="0 0 220 220" role="img" aria-label="Bloch sphere with the state vector and its trajectory"></svg>
+  </div>
+  <div class="panel plot">
+    <div class="plot-head"><span>Rydberg population</span><button id="play" type="button">Pause</button></div>
+    <svg id="plot" viewBox="0 0 360 136" role="img" aria-label="Rydberg population versus time"></svg>
+    <div class="legend">
+      <span><i style="border-color:var(--c)"></i>P<sub>r</sub>(t)</span>
+      <span><i style="border-color:var(--muted);border-top-style:dashed"></i>maximum Ω²/Ω′²</span>
+    </div>
+  </div>
+</div>
+
+<div class="readouts" style="margin-top:12px">
+  <div class="readout"><div class="k">Ω′/2π = √(Ω²+δ²)/2π</div><div class="v" id="rg"></div></div>
+  <div class="readout"><div class="k">θ, axis from the pole</div><div class="v" id="rt"></div></div>
+  <div class="readout"><div class="k">max P<sub>r</sub> = sin²θ</div><div class="v" id="rm"></div></div>
+</div>
+
+<p>The atom starts in |g⟩ and evolves under constant Ω and δ. The plot gives the height and the period of the oscillation; the geometry behind both is on the Bloch sphere. The state precesses about a fixed axis <span style="white-space:nowrap">n ∝ (Ω cos φ, −Ω sin φ, −δ)</span>, tilted by an angle θ from the vertical |g⟩–|r⟩ axis, with tan θ = Ω/|δ|. The precession, and with it P<sub>r</sub>(t), runs at the generalised Rabi frequency <span style="white-space:nowrap">Ω′ = √(Ω² + δ²)</span>. Starting from the ground state |g⟩ at the south pole, the vector circles the axis on a cone of half-angle θ, so its farthest point lies at an angle 2θ from the pole. The maximum <span style="white-space:nowrap">P<sub>r</sub> = Ω²/(Ω² + δ²) = sin²θ</span> follows from this geometry. With δ = 0 the axis lies in the equatorial plane and the cone passes through the Rydberg state |r⟩; with |δ| ≫ Ω the axis is almost vertical and the vector circles tightly around the pole. The phase φ only rotates the axis about the vertical: together with δ and the pulse duration it gives any single-qubit rotation.</p>
+<p class="fine">H = (Ω/2)(cos φ σ<sub>x</sub> − sin φ σ<sub>y</sub>) − (δ/2) σ<sub>z</sub>, the sign of φ as in Pulser, |g⟩ at the south pole, no decay. The dashed line through the sphere is the rotation axis; the thin circle is the trajectory over one period.</p>
+
+<script>
+(function(){
+const root=document.querySelector(".rabi"), $=id=>root.querySelector("#"+id);
+const NS="http://www.w3.org/2000/svg";
+const el=(tag,attrs,parent)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent.appendChild(e);return e;};
+const css=v=>getComputedStyle(root).getPropertyValue(v).trim();
+const T=4, N=600; // µs: one full period at the slowest Ω/2π = 0.3 MHz
+let f=1, d=0, phi=0, tau=0, playing=!matchMedia("(prefers-reduced-motion: reduce)").matches, last=null, S=null;
+
+// ---- physics: Bloch vector by Rodrigues rotation about n = (Ω cos φ, −Ω sin φ, −δ)/Ω′, Pulser sign of φ ----
+function setup(){const Om=2*Math.PI*f, de=2*Math.PI*d, W=Math.hypot(Om,de), ph=phi*Math.PI/180;
+  S={W,n:[Om*Math.cos(ph)/W,-Om*Math.sin(ph)/W,-de/W],pmax:Om*Om/(W*W),theta:Math.atan2(Om,Math.abs(de))};}
+function bloch(t){const [nx,ny,nz]=S.n, th=S.W*t, c=Math.cos(th), s=Math.sin(th); // r0 = (0,0,−1): n×r0 = (−ny,nx,0), n·r0 = −nz
+  return [-ny*s+nx*-nz*(1-c), nx*s+ny*-nz*(1-c), -c+nz*-nz*(1-c)];}
+const pr=t=>S.pmax*Math.pow(Math.sin(S.W*t/2),2);
+
+// ---- Bloch sphere (orthographic, azimuth 30°, elevation 22°) ----
+const bs=$("bs"), C=110, R=84, az=Math.PI/6, ep=22*Math.PI/180;
+const e1=[-Math.sin(az),Math.cos(az),0], e2=[-Math.cos(az)*Math.sin(ep),-Math.sin(az)*Math.sin(ep),Math.cos(ep)];
+const P2=v=>[C+R*(v[0]*e1[0]+v[1]*e1[1]), C-R*(v[0]*e2[0]+v[1]*e2[1]+v[2]*e2[2])];
+const pathOf=pts=>pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join("");
+el("circle",{cx:C,cy:C,r:R,fill:"none",stroke:"currentColor","stroke-opacity":.5},bs);
+el("path",{d:pathOf(Array.from({length:73},(_,i)=>P2([Math.cos(i/72*2*Math.PI),Math.sin(i/72*2*Math.PI),0]))),fill:"none",stroke:"currentColor","stroke-opacity":.25},bs);
+for(const [a,lab] of [[[1,0,0],"x"],[[0,1,0],"y"],[[0,0,1],""]]){const p=P2(a),q=P2(a.map(x=>-x));
+  el("line",{x1:q[0],y1:q[1],x2:p[0],y2:p[1],stroke:"currentColor","stroke-opacity":.25},bs);
+  if(lab){const o=P2(a.map(x=>x*1.14));el("text",{x:o[0],y:o[1]+4,"text-anchor":"middle","font-size":11,"font-style":"italic",fill:"currentColor","fill-opacity":.7},bs).textContent=lab;}}
+el("text",{x:C,y:C-R-9,"text-anchor":"middle","font-size":12,fill:"currentColor","fill-opacity":.8},bs).textContent="|r⟩";
+el("text",{x:C,y:C+R+16,"text-anchor":"middle","font-size":12,fill:"currentColor","fill-opacity":.8},bs).textContent="|g⟩";
+const axis=el("line",{"stroke-dasharray":"4 4","stroke-opacity":.7,"stroke-width":1.5},bs);
+const traj=el("path",{fill:"none","stroke-width":1.2,"stroke-opacity":.6},bs);
+const vec=el("line",{"stroke-width":2.5,"stroke-linecap":"round"},bs);
+const tip=el("circle",{r:4.5},bs);
+function drawSphere(){
+  const a=P2(S.n), b=P2(S.n.map(x=>-x));axis.setAttribute("x1",b[0]);axis.setAttribute("y1",b[1]);axis.setAttribute("x2",a[0]);axis.setAttribute("y2",a[1]);
+  const per=2*Math.PI/S.W;traj.setAttribute("d",pathOf(Array.from({length:97},(_,i)=>P2(bloch(per*i/96)))));
+}
+
+// ---- plot ----
+const P={l:34,r:10,t:8,b:34,w:360,h:136}, px=t=>P.l+(P.w-P.l-P.r)*t/T, py=p=>P.t+(P.h-P.t-P.b)*(1-p);
+const plot=$("plot"), grid=el("g",{},plot), curve=el("path",{fill:"none","stroke-width":2.2},plot), maxl=el("line",{"stroke-dasharray":"4 4"},plot);
+const cursor=el("line",{y1:P.t,y2:P.h-P.b,stroke:"currentColor","stroke-opacity":.4},plot);
+function drawGrid(){grid.innerHTML="";const ink=css("--muted"),line=css("--line");
+  for(const p of [0,.5,1]){el("line",{x1:P.l,x2:P.w-P.r,y1:py(p),y2:py(p),stroke:line},grid);
+    el("text",{x:P.l-6,y:py(p)+4,"text-anchor":"end","font-size":11,fill:ink},grid).textContent=p;}
+  for(let k=0;k<=T;k++)el("text",{x:px(k),y:P.h-P.b+13,"text-anchor":"middle","font-size":11,fill:ink},grid).textContent=k;
+  el("text",{x:(P.l+P.w-P.r)/2,y:P.h-3,"text-anchor":"middle","font-size":11,fill:ink},grid).textContent="time (µs)";}
+function drawCurve(){let s="";for(let i=0;i<=N;i++){const t=T*i/N;s+=(i?"L":"M")+px(t).toFixed(1)+" "+py(pr(t)).toFixed(1);}
+  curve.setAttribute("d",s);maxl.setAttribute("x1",P.l);maxl.setAttribute("x2",P.w-P.r);maxl.setAttribute("y1",py(S.pmax));maxl.setAttribute("y2",py(S.pmax));}
+
+function recolor(){const ink=css("--ink"),c=css("--c"),mu=css("--muted");bs.style.color=ink;plot.style.color=ink;
+  axis.setAttribute("stroke",c);traj.setAttribute("stroke",c);vec.setAttribute("stroke",c);tip.setAttribute("fill",c);curve.setAttribute("stroke",c);maxl.setAttribute("stroke",mu);}
+function updateTime(){const v=P2(bloch(tau));vec.setAttribute("x1",C);vec.setAttribute("y1",C);vec.setAttribute("x2",v[0]);vec.setAttribute("y2",v[1]);
+  tip.setAttribute("cx",v[0]);tip.setAttribute("cy",v[1]);cursor.setAttribute("x1",px(tau));cursor.setAttribute("x2",px(tau));}
+function updateText(){$("rov").textContent=f.toFixed(2)+" MHz";$("rdv").textContent=(d>0?"+":"")+d.toFixed(1)+" MHz";
+  $("rpv").textContent=phi+"°";
+  $("rg").textContent=(S.W/(2*Math.PI)).toFixed(2)+" MHz";$("rm").textContent=S.pmax.toFixed(2);
+  $("rt").textContent=(S.theta*180/Math.PI).toFixed(0)+"°";}
+function refresh(){setup();drawSphere();drawCurve();updateText();updateTime();}
+
+$("ro").addEventListener("input",e=>{f=+e.target.value;refresh();});
+$("rd").addEventListener("input",e=>{d=+e.target.value;refresh();});
+$("rp").addEventListener("input",e=>{phi=+e.target.value;refresh();});
+const btn=$("play"), setBtn=()=>btn.textContent=playing?"Pause":"Play";
+btn.addEventListener("click",()=>{playing=!playing;last=null;setBtn();if(playing)play();});
+let raf=0;
+function loop(ts){raf=0;if(!playing)return;if(last!==null){tau=(tau+(ts-last)/1000*(T/6))%T;}last=ts;updateTime();raf=requestAnimationFrame(loop);}
+const play=()=>{if(!raf)raf=requestAnimationFrame(loop);};
+new MutationObserver(()=>{recolor();drawGrid();}).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+
+recolor();drawGrid();refresh();setBtn();
+if(!playing){tau=0.4;updateTime();}else play();
+})();
+</script>
+</div>

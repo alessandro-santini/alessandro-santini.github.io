@@ -1,0 +1,180 @@
+<div class="cz">
+<style>
+.cz{--panel:var(--entry);--ink:var(--primary);--muted:var(--secondary);--line:var(--border);--c:var(--accent);--violet:#5B63A6;--bad:#B3261E;margin:16px 0}
+:root[data-theme="dark"] .cz{--violet:#8088D0;--bad:#F28B82}
+.cz .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.cz svg{display:block;width:100%;height:auto}
+.cz .scene svg{touch-action:none;cursor:grab}
+.cz .scene svg.dragging{cursor:grabbing}
+.cz .controls{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;margin:12px 0}
+@media (max-width:500px){.cz .controls{grid-template-columns:1fr}}
+.cz .control label{display:flex;justify-content:space-between;font-size:.9rem;margin-bottom:0}
+.cz .control label span:last-child{font-variant-numeric:tabular-nums;color:var(--muted)}
+.cz input[type=range]{width:100%;accent-color:var(--c);height:24px}
+.cz input:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+.cz .panels{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+@media (max-width:560px){.cz .panels{grid-template-columns:1fr}}
+.cz .plot-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.cz .plot-head span{font-family:var(--font-serif);font-weight:600;font-size:1rem}
+.cz .status{font-size:.9rem;margin-top:8px;min-height:1.4em}
+.cz table{border-collapse:collapse;width:100%;font-size:.85rem;font-variant-numeric:tabular-nums;margin:4px 0 0}
+.cz th,.cz td{border:0;padding:3px 4px;text-align:right;white-space:nowrap}
+.cz th{color:var(--muted);font-weight:500;font-family:var(--font-serif);font-style:italic}
+.cz td:first-child,.cz th:first-child{text-align:left}
+.cz .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.cz .readouts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+@media (max-width:500px){.cz .readouts{grid-template-columns:repeat(2,1fr)}}
+.cz .readout{border-top:2px solid var(--line);padding-top:4px}
+.cz .readout .k{font-family:var(--font-serif);font-style:italic;color:var(--muted);font-size:.9rem}
+.cz .readout .v{font-size:1rem;font-weight:600;font-variant-numeric:tabular-nums}
+.cz .fine{font-size:.82rem;color:var(--muted);margin-top:10px}
+</style>
+
+<div class="controls">
+  <div class="control">
+    <label for="czr"><span>Distance R</span><span id="czrv"></span></label>
+    <input id="czr" type="range" min="2" max="14" step="0.1" value="6">
+  </div>
+  <div class="control">
+    <label for="czo"><span>Rabi frequency Ω/2π (log slider)</span><span id="czov"></span></label>
+    <input id="czo" type="range" min="-0.301" max="1" step="0.01" value="0" list="czo-ticks">
+    <datalist id="czo-ticks"><option value="-0.301"></option><option value="0"></option><option value="0.699"></option><option value="1"></option></datalist>
+  </div>
+</div>
+
+<div class="panels">
+  <div class="panel scene">
+    <svg id="czs" viewBox="0 0 360 170" role="img" aria-label="Control and target atoms with their blockade disks; drag to change the distance">
+      <g id="czdisks"></g>
+      <line id="czline" stroke="currentColor" stroke-opacity=".35" stroke-dasharray="3 4"/>
+      <text id="czrl" text-anchor="middle" font-size="12" fill="currentColor" fill-opacity=".7"></text>
+      <g id="czatoms"></g>
+      <g transform="translate(14,160)"><line x1="0" x2="90" y1="0" y2="0" stroke="currentColor" stroke-opacity=".5" stroke-width="2"/><text x="45" y="-6" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity=".6">5 µm</text></g>
+    </svg>
+    <div class="status" id="czstat"></div>
+  </div>
+  <div class="panel">
+    <div class="plot-head"><span>The π–2π–π protocol</span></div>
+    <svg id="czp" viewBox="0 0 360 96" role="img" aria-label="Pulse timeline: a π-pulse on the control, a 2π-pulse on the target, a π-pulse on the control"></svg>
+    <table aria-label="For each computational input state: the phase acquired, the population that returns to it, and the population left in the Rydberg levels">
+      <tr><th>input</th><th>phase / π</th><th>population</th><th>leakage</th></tr>
+      <tr><td class="mono">|00⟩ = |gg⟩</td><td id="czph0"></td><td id="czpop0"></td><td id="czlk0"></td></tr>
+      <tr><td class="mono">|01⟩ = |gh⟩</td><td id="czph1"></td><td id="czpop1"></td><td id="czlk1"></td></tr>
+      <tr><td class="mono">|10⟩ = |hg⟩</td><td id="czph2"></td><td id="czpop2"></td><td id="czlk2"></td></tr>
+      <tr><td class="mono">|11⟩ = |hh⟩</td><td id="czph3"></td><td id="czpop3"></td><td id="czlk3"></td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="plot-head"><span>Gate error against the distance</span></div>
+  <svg id="czc" viewBox="0 0 640 220" role="img" aria-label="Gate error 1 minus F on a logarithmic axis against the interatomic distance, for the chosen Rabi frequency, with the chosen distance and the blockade radius marked"></svg>
+  <div class="status" id="czhov"></div>
+</div>
+
+<div class="readouts">
+  <div class="readout"><div class="k">gate error 1 − F</div><div class="v" id="czerr"></div></div>
+  <div class="readout"><div class="k">Ω/B, B = C<sub>6</sub>/(ħR<sup>6</sup>)</div><div class="v" id="czrat"></div></div>
+  <div class="readout"><div class="k">blockade radius R<sub>b</sub></div><div class="v" id="czrbv"><span id="czrb"></span> µm</div></div>
+  <div class="readout"><div class="k">gate duration 4π/Ω</div><div class="v" id="czdur"></div></div>
+</div>
+
+<p>In the digital mode the qubit lives in two hyperfine ground states, g = 0 and h = 1, which do not interact. To entangle two atoms the protocol borrows the Rydberg state for a moment: a π-pulse takes the control from g to r, a 2π-pulse on the target would take it g → r → g with a phase −1, but is blocked when the control sits in r, and a last π-pulse brings the control back. Each input state picks up a phase −1 unless both atoms are in h, which is the CZ gate up to a global phase. The blockade is never perfect: with a finite shift B = C<sub>6</sub>/(ħR<sup>6</sup>) the 2π-pulse on the target is merely detuned by B, the state |rg⟩ picks up a stray phase and a little population leaks to |rr⟩. Both errors scale as Ω/B and the gate error as (Ω/B)<sup>2</sup>: move the atoms closer and it falls by six orders of magnitude over a few micrometres. A weaker drive helps the blockade and a stronger one makes the gate shorter, which is the trade-off of the design.</p>
+<p class="fine">Exact evolution of two three-level atoms under resonant square pulses on g ↔ r, interaction V = C<sub>6</sub>/R<sup>6</sup> on |rr⟩ only, no decay, no laser noise. C<sub>6</sub>/ħ = 5 420 158.53 rad·µs⁻¹·µm⁶, the Pulser value of the DigitalAnalogDevice for n = 70, as in the figure of the notes. F = [Tr(MM<sup>†</sup>) + |Tr(CZ<sup>†</sup>M)|²]/20 is the average gate fidelity, with M the evolution restricted to the four computational states and CZ = diag(−1, −1, −1, 1), the gate up to its global phase. The leakage column is the population left outside the computational states; the phase is that of the diagonal element of M. Each disk has radius R<sub>b</sub>/2, so the two disks touch at R = R<sub>b</sub> = (C<sub>6</sub>/ħΩ)<sup>1/6</sup>. Hover the curve to read it, click to set R.</p>
+
+<script>
+(function(){
+const root=document.querySelector(".cz"), $=id=>root.querySelector("#"+id);
+const NS="http://www.w3.org/2000/svg", el=(tag,attrs,parent)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent.appendChild(e);return e;};
+const css=v=>getComputedStyle(root).getPropertyValue(v).trim();
+const C6=5420158.53, RMIN=2, RMAX=14, CX=180, CY=78, S=18; // S: px per µm
+let R=6, f=1, hover=-1;
+
+// A pulse on one atom couples |g t⟩ ↔ |r t⟩ for every level t of the other atom, with the shift V on |r r⟩: a 2×2 block per t.
+// H = a·I + bx·σx + bz·σz with a = V'/2, bz = −V'/2, bx = Ω/2; exp(−iHt) = e^{−iat}(cos|b|t · I − i sin|b|t · (bx σx + bz σz)/|b|).
+function pulse(re,im,atom,theta,Om,V){const t=theta/Om;
+  for(let o=0;o<3;o++){const p=atom===0?o:3*o, q=atom===0?6+o:3*o+2, Vp=o===2?V:0; // p: |g o⟩ or |o g⟩, q: |r o⟩ or |o r⟩
+    const a=Vp/2, bz=-Vp/2, bx=Om/2, nb=Math.hypot(bx,bz), c=Math.cos(nb*t), s=Math.sin(nb*t), ea=[Math.cos(a*t),-Math.sin(a*t)];
+    const u00=[c,-s*bz/nb], u11=[c,s*bz/nb], u01=[0,-s*bx/nb]; // before the phase e^{−iat}
+    const mul=(x,y)=>[x[0]*y[0]-x[1]*y[1],x[0]*y[1]+x[1]*y[0]];
+    const U00=mul(ea,u00), U11=mul(ea,u11), U01=mul(ea,u01);
+    const P=[re[p],im[p]], Q=[re[q],im[q]], np=[U00[0]*P[0]-U00[1]*P[1]+U01[0]*Q[0]-U01[1]*Q[1],U00[0]*P[1]+U00[1]*P[0]+U01[0]*Q[1]+U01[1]*Q[0]];
+    const nq=[U01[0]*P[0]-U01[1]*P[1]+U11[0]*Q[0]-U11[1]*Q[1],U01[0]*P[1]+U01[1]*P[0]+U11[0]*Q[1]+U11[1]*Q[0]];
+    re[p]=np[0];im[p]=np[1];re[q]=nq[0];im[q]=nq[1];}}
+const COMP=[0,1,3,4]; // |gg⟩, |gh⟩, |hg⟩, |hh⟩ with index 3·control + target, levels g = 0, h = 1, r = 2
+function gate(Om,V){const M=[];
+  for(const k of COMP){const re=new Float64Array(9), im=new Float64Array(9);re[k]=1;
+    pulse(re,im,0,Math.PI,Om,V);pulse(re,im,1,2*Math.PI,Om,V);pulse(re,im,0,Math.PI,Om,V);
+    M.push({col:COMP.map(j=>[re[j],im[j]]),leak:1-COMP.reduce((a,j)=>a+re[j]*re[j]+im[j]*im[j],0)});}
+  let tr=0,trre=0,trim=0;M.forEach((m,k)=>{m.col.forEach(z=>{tr+=z[0]*z[0]+z[1]*z[1];});const d=m.col[k], sg=k===3?1:-1;trre+=sg*d[0];trim+=sg*d[1];});
+  return {M,err:1-(tr+trre*trre+trim*trim)/20};}
+const errAt=(Om,r)=>gate(Om,C6/Math.pow(r,6)).err;
+
+// ---- scene ----
+const scene=$("czs"), disks=$("czdisks"), atoms=$("czatoms"), disk=[], core=[], lab=[];
+for(let i=0;i<2;i++){disk.push(el("circle",{cy:CY,"stroke-opacity":.45,"stroke-dasharray":"2 4"},disks));
+  core.push(el("circle",{cy:CY,r:9,"stroke-width":2},atoms));lab.push(el("text",{y:CY+26,"text-anchor":"middle","font-size":11},atoms));lab[i].textContent=i?"target":"control";}
+const atomX=i=>CX+(i?1:-1)*R*S/2;
+function drawScene(Rb){const c=css("--c"), ink=css("--ink"), panel=css("--panel"), mu=css("--muted");scene.style.color=ink;
+  for(let i=0;i<2;i++){const x=atomX(i);disk[i].setAttribute("cx",x);disk[i].setAttribute("r",Rb*S/2);disk[i].setAttribute("fill",c);disk[i].setAttribute("fill-opacity",.07);disk[i].setAttribute("stroke",c);
+    core[i].setAttribute("cx",x);core[i].setAttribute("fill",i?c:css("--violet"));core[i].setAttribute("stroke",panel);lab[i].setAttribute("x",x);lab[i].setAttribute("fill",mu);}
+  const l=$("czline");l.setAttribute("x1",atomX(0)+12);l.setAttribute("x2",atomX(1)-12);l.setAttribute("y1",CY-24);l.setAttribute("y2",CY-24);
+  const rl=$("czrl");rl.setAttribute("x",CX);rl.setAttribute("y",CY-30);rl.textContent="R = "+R.toFixed(1)+" µm";}
+
+// ---- pulse timeline ----
+function drawPulses(Om){const p=$("czp");p.innerHTML="";const c=css("--c"), violet=css("--violet"), mu=css("--muted"), ink=css("--ink"), line=css("--line");p.style.color=ink;
+  const x0=70, w=270, T=w/4;
+  for(const [row,y,name,col] of [[0,14,"control",violet],[1,52,"target",c]]){el("text",{x:x0-8,y:y+22,"text-anchor":"end","font-size":11,fill:mu},p).textContent=name;
+    el("line",{x1:x0,x2:x0+w,y1:y+30,y2:y+30,stroke:line},p);
+    for(const [s,n,label] of row===0?[[0,1,"π"],[3,1,"π"]]:[[1,2,"2π"]]){el("rect",{x:x0+s*T,y:y+4,width:n*T,height:26,rx:3,fill:col,"fill-opacity":.8},p);
+      el("text",{x:x0+(s+n/2)*T,y:y+22,"text-anchor":"middle","font-size":12,"font-weight":600,fill:css("--panel")},p).textContent=label;}}
+  el("text",{x:x0+w,y:92,"text-anchor":"end","font-size":10.5,fill:mu},p).textContent="4π/Ω = "+(4*Math.PI/Om*1000).toFixed(0)+" ns";
+  el("text",{x:x0,y:92,"font-size":10.5,fill:mu},p).textContent="time";}
+
+// ---- error curve ----
+const chart=$("czc"), P={l:46,r:14,t:14,b:30,w:640,h:220}, NPTS=600, GRID=Array.from({length:NPTS+1},(_,k)=>RMIN+(RMAX-RMIN)*k/NPTS);
+const lx=r=>P.l+(P.w-P.l-P.r)*(r-RMIN)/(RMAX-RMIN), ly=e=>P.t+(P.h-P.t-P.b)*Math.min(1,Math.max(0,-Math.log10(Math.max(e,1e-12))/6));
+let curve=null;
+function drawChart(Om,Rb,err){chart.innerHTML="";P.w=matchMedia("(max-width:560px)").matches?360:640;chart.setAttribute("viewBox","0 0 "+P.w+" "+P.h);
+  const ink=css("--ink"), c=css("--c"), mu=css("--muted"), line=css("--line"), panel=css("--panel");chart.style.color=ink;
+  for(let k=0;k<=6;k++){const e=Math.pow(10,-k);el("line",{x1:P.l,x2:P.w-P.r,y1:ly(e),y2:ly(e),stroke:line},chart);
+    el("text",{x:P.l-6,y:ly(e)+4,"text-anchor":"end","font-size":11,fill:mu},chart).textContent=k?"10⁻"+"⁰¹²³⁴⁵⁶"[k]:"1";}
+  for(let r=2;r<=14;r+=2){el("text",{x:lx(r),y:P.h-P.b+14,"text-anchor":"middle","font-size":11,fill:mu},chart).textContent=r;}
+  el("text",{x:(P.l+P.w-P.r)/2,y:P.h-3,"text-anchor":"middle","font-size":11,fill:mu},chart).textContent="distance R (µm)";
+  if(Rb>RMIN&&Rb<RMAX){el("line",{x1:lx(Rb),x2:lx(Rb),y1:P.t,y2:P.h-P.b,stroke:c,"stroke-dasharray":"4 3"},chart);
+    el("text",{x:lx(Rb)+4,y:P.t+10,"font-size":10.5,fill:c},chart).textContent="R_b";}
+  el("path",{d:curve.map((e,k)=>(k?"L":"M")+lx(GRID[k]).toFixed(1)+" "+ly(e).toFixed(1)).join(""),fill:"none",stroke:ink,"stroke-width":2,"stroke-linejoin":"round"},chart);
+  el("circle",{cx:lx(R),cy:ly(err),r:5,fill:c,stroke:panel,"stroke-width":2},chart);
+  if(hover>=0)el("circle",{cx:lx(GRID[hover]),cy:ly(curve[hover]),r:4,fill:mu,stroke:panel,"stroke-width":2},chart);}
+
+function draw(){const Om=2*Math.PI*f, V=C6/Math.pow(R,6), Rb=Math.pow(C6/Om,1/6), g=gate(Om,V), ink=css("--ink");
+  $("czrv").textContent=R.toFixed(1)+" µm";$("czov").textContent=f.toFixed(2)+" MHz";
+  g.M.forEach((m,k)=>{const d=m.col[k], ph=Math.atan2(d[1],d[0])/Math.PI, pop=d[0]*d[0]+d[1]*d[1];
+    $("czph"+k).textContent=(Math.abs(ph)<5e-4?0:ph).toFixed(3);$("czpop"+k).textContent=pop.toFixed(4);$("czlk"+k).textContent=m.leak.toExponential(1);});
+  $("czerr").textContent=g.err.toExponential(2);$("czrat").textContent=(Om/V).toExponential(2);$("czrb").textContent=Rb.toFixed(2);$("czdur").textContent=(4*Math.PI/Om*1000).toFixed(0)+" ns";
+  const q=Om/V;
+  $("czstat").textContent=R<Rb?"Blockaded: Ω/B = "+q.toExponential(1)+", the 2π-pulse on the target is detuned by B and the gate error 1 − F = "+g.err.toExponential(1)+" falls as (Ω/B)²."
+    :"Blockade broken: Ω/B = "+q.toFixed(2)+" ≥ 1, the 2π-pulse on the target goes through whatever the control does, and the phases no longer make a CZ gate.";
+  drawScene(Rb);drawPulses(Om);drawChart(Om,Rb,g.err);}
+function recurve(){curve=GRID.map(r=>errAt(2*Math.PI*f,r));}
+
+// ---- interaction ----
+$("czr").addEventListener("input",e=>{R=+e.target.value;draw();});
+$("czo").addEventListener("input",e=>{f=Math.pow(10,+e.target.value);recurve();draw();});
+let dragging=false;
+function toUser(ev,svg){const p=svg.createSVGPoint();p.x=ev.clientX;p.y=ev.clientY;return p.matrixTransform(svg.getScreenCTM().inverse());}
+function move(ev){const u=toUser(ev,scene);R=Math.min(RMAX,Math.max(RMIN,Math.round(2*Math.abs(u.x-CX)/S*10)/10));$("czr").value=R;draw();}
+scene.addEventListener("pointerdown",ev=>{dragging=true;scene.classList.add("dragging");scene.setPointerCapture(ev.pointerId);move(ev);});
+scene.addEventListener("pointermove",ev=>{if(dragging)move(ev);});
+const end=()=>{dragging=false;scene.classList.remove("dragging");};
+scene.addEventListener("pointerup",end);scene.addEventListener("pointercancel",end);
+const nearest=ev=>{const u=toUser(ev,chart);return Math.min(NPTS,Math.max(0,Math.round((u.x-P.l)/(P.w-P.l-P.r)*NPTS)));};
+chart.addEventListener("pointermove",ev=>{hover=nearest(ev);$("czhov").textContent="R = "+GRID[hover].toFixed(2)+" µm: 1 − F = "+curve[hover].toExponential(2);draw();});
+chart.addEventListener("pointerleave",()=>{hover=-1;$("czhov").textContent="";draw();});
+chart.addEventListener("click",ev=>{R=Math.round(GRID[nearest(ev)]*10)/10;$("czr").value=R;draw();});
+new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+addEventListener("resize",draw);
+recurve();draw();
+})();
+</script>
+</div>

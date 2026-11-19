@@ -1,0 +1,157 @@
+{{/* Neutral-atom register. One variant per page: atoms as "x,y", blockade pairs as "x1,y1,x2,y2"
+     (a dashed circle is drawn around the second atom, a faint line between the two).
+     Decorative without JS; the inline script makes the atoms toggleable (Rydberg blockade toy).
+     State is never stored: every load starts from the configuration below. */}}
+{{- $v := dict
+  "home"         (dict "atoms" (slice "58,14" "118,14" "238,14" "358,14" "478,14" "598,14" "28,30" "178,30" "298,30" "418,30" "538,30" "658,30")
+                       "pairs" (slice "118,14,178,30" "238,14,178,30" "418,30,478,14"))
+  "projects"     (dict "atoms" (slice "28,14" "148,14" "268,14" "328,14" "448,14" "568,14" "658,14" "88,30" "208,30" "388,30" "508,30" "628,30")
+                       "pairs" (slice "268,14,328,14" "388,30,328,14" "568,14,628,30"))
+  "about"        (dict "atoms" (slice "28,14" "148,14" "268,14" "328,14" "448,14" "568,14" "88,30" "208,30" "388,30" "508,30" "628,30" "658,14")
+                       "pairs" (slice "88,30,148,14" "148,14,208,30" "448,14,508,30"))
+-}}
+{{- $key := cond .IsHome "home" (lower .Title) -}}
+{{- $l := index $v $key | default (index $v "home") -}}
+<svg class="lattice" viewBox="0 0 680 44" aria-hidden="true">
+  <g class="bonds" stroke="currentColor" fill="none" stroke-width="1" opacity=".35">
+  {{- range $l.pairs }}{{ $p := split . "," }}
+    <line data-for="{{ index $p 2 }},{{ index $p 3 }}" x1="{{ index $p 0 }}" y1="{{ index $p 1 }}" x2="{{ index $p 2 }}" y2="{{ index $p 3 }}"/>
+  {{- end }}
+  </g>
+  <g class="halos" stroke="currentColor" fill="none" stroke-width="1" stroke-dasharray="3 3" opacity=".55">
+  {{- range $l.pairs }}{{ $p := split . "," }}
+    <circle class="halo on" data-p="{{ index $p 2 }},{{ index $p 3 }}" cx="{{ index $p 2 }}" cy="{{ index $p 3 }}" r="13"/>
+  {{- end }}
+  </g>
+  <g fill="currentColor">
+  {{- range $l.atoms }}{{ $a := split . "," }}
+    <g class="atom" data-p="{{ . }}">
+      <circle class="hit" cx="{{ index $a 0 }}" cy="{{ index $a 1 }}" r="15" fill="transparent"/>
+      <circle class="ring" cx="{{ index $a 0 }}" cy="{{ index $a 1 }}" r="7" fill="none" stroke="currentColor" stroke-width="1"/>
+      <circle class="dot" cx="{{ index $a 0 }}" cy="{{ index $a 1 }}" r="2.6"/>
+    </g>
+  {{- end }}
+  </g>
+</svg>
+<script>
+(() => {
+  const svg = document.currentScript.previousElementSibling;
+  const RB = 64;       // blockade radius in viewBox units: covers first neighbours (34, 60, 62), not the next shell (91+)
+  const HIT = 15;      // tap radius in screen px (~30px target)
+  const DUR = 500;
+  const still = matchMedia('(prefers-reduced-motion: reduce)');
+  const NS = 'http://www.w3.org/2000/svg';
+  const bonds = svg.querySelector('.bonds');
+  const halos = svg.querySelector('.halos');
+  const atoms = [...svg.querySelectorAll('.atom')].map(el => {
+    const [x, y] = el.dataset.p.split(',').map(Number);
+    return { el, x, y, on: !!halos.querySelector(`[data-p="${el.dataset.p}"]`) };
+  }).sort((a, b) => a.x - b.x || a.y - b.y);
+  const near = (a, b) => a !== b && Math.hypot(a.x - b.x, a.y - b.y) <= RB;
+
+  svg.removeAttribute('aria-hidden');
+  svg.setAttribute('role', 'group');
+  svg.setAttribute('aria-label', 'Neutral-atom register. Press an atom to excite it; its nearest neighbours are then blockaded.');
+  atoms.forEach((a, i) => {
+    a.el.setAttribute('role', 'button');
+    a.el.setAttribute('aria-label', `Atom ${i + 1}`);
+    a.el.tabIndex = i ? -1 : 0;
+  });
+
+  const update = () => atoms.forEach(a => {
+    const blk = !a.on && atoms.some(b => b.on && near(a, b));
+    a.el.classList.toggle('blk', blk);
+    a.el.setAttribute('aria-pressed', a.on);
+    a.el.setAttribute('aria-disabled', blk);
+  });
+
+  const draw = (from, to) => {
+    const l = document.createElementNS(NS, 'line');
+    const len = Math.hypot(to.x - from.x, to.y - from.y);
+    Object.entries({ x1: from.x, y1: from.y, x2: to.x, y2: to.y }).forEach(([k, v]) => l.setAttribute(k, v));
+    l.dataset.for = from.el.dataset.p;
+    l.classList.add('bond');
+    l.style.strokeDasharray = len;
+    l.style.strokeDashoffset = len;
+    bonds.append(l);
+    l.getBoundingClientRect();
+    l.style.strokeDashoffset = 0;
+  };
+
+  const erase = l => {
+    l.removeAttribute('data-for');
+    if (still.matches) return l.remove();
+    const len = Math.hypot(l.x2.baseVal.value - l.x1.baseVal.value, l.y2.baseVal.value - l.y1.baseVal.value);
+    l.classList.add('bond');
+    l.style.strokeDasharray = len;
+    l.getBoundingClientRect();
+    l.style.strokeDashoffset = len;
+    setTimeout(() => l.remove(), DUR);
+  };
+
+  const toggle = a => {
+    svg.classList.add('live');
+    if (a.el.classList.contains('blk')) return;
+    a.on = !a.on;
+    if (a.on) {
+      const h = document.createElementNS(NS, 'circle');
+      Object.entries({ cx: a.x, cy: a.y, r: 13 }).forEach(([k, v]) => h.setAttribute(k, v));
+      h.dataset.p = a.el.dataset.p;
+      h.classList.add('halo');
+      halos.append(h);
+      h.getBoundingClientRect();
+      h.classList.add('on');
+      atoms.filter(b => near(a, b)).forEach(b => draw(a, b));
+    } else {
+      halos.querySelectorAll(`[data-p="${a.el.dataset.p}"]`).forEach(h => {
+        h.removeAttribute('data-p');
+        h.classList.remove('on');
+        still.matches ? h.remove() : setTimeout(() => h.remove(), DUR);
+      });
+      bonds.querySelectorAll(`[data-for="${a.el.dataset.p}"]`).forEach(erase);
+    }
+    update();
+  };
+
+  const focus = a => {
+    atoms.forEach(b => { b.el.tabIndex = b === a ? 0 : -1; });
+    a.el.focus();
+  };
+
+  // Hit-test against the nearest atom, so targets stay ~30px even when the register is scaled down on phones.
+  svg.addEventListener('click', e => {
+    const m = svg.getScreenCTM();
+    if (!m) return;
+    const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
+    let best, d = Infinity;
+    atoms.forEach(a => {
+      const da = Math.hypot(a.x - p.x, a.y - p.y);
+      if (da < d) { d = da; best = a; }
+    });
+    if (d * m.a <= HIT) toggle(best);
+  });
+
+  svg.addEventListener('keydown', e => {
+    const i = atoms.findIndex(a => a.el === e.target);
+    if (i < 0) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggle(atoms[i]);
+    } else {
+      const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+      const j = e.key === 'Home' ? 0 : e.key === 'End' ? atoms.length - 1 : step && Math.min(Math.max(i + step, 0), atoms.length - 1);
+      if (j === undefined) return;
+      e.preventDefault();
+      focus(atoms[j]);
+    }
+  });
+
+  svg.addEventListener('focusin', e => {
+    const a = atoms.find(b => b.el === e.target);
+    if (a) svg.classList.add('live');
+    if (a) atoms.forEach(b => { b.el.tabIndex = b === a ? 0 : -1; });
+  });
+
+  update();
+})();
+</script>

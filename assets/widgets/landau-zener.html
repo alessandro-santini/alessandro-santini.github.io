@@ -1,0 +1,255 @@
+<div class="lz">
+<style>
+.lz{--panel:var(--entry);--ink:var(--primary);--muted:var(--secondary);--line:var(--border);--c:var(--accent);--violet:#5B63A6;margin:16px 0}
+:root[data-theme="dark"] .lz{--violet:#8088D0}
+.lz .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.lz svg{display:block;width:100%;height:auto}
+.lz .units{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;margin:0 0 4px;background:var(--panel)}
+.lz .units button{border:0;padding:5px 14px;margin:0}
+.lz .units button[aria-pressed="true"]{background:var(--c);color:var(--theme)}
+.lz .controls{display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:8px 20px;align-items:end;margin:12px 0}
+@media (max-width:700px){.lz .controls{grid-template-columns:1fr 1fr}}
+@media (max-width:420px){.lz .controls{grid-template-columns:1fr}}
+.lz .control label{display:flex;justify-content:space-between;font-size:.9rem}
+.lz .control label span:last-child{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.lz input[type=range]{width:100%;accent-color:var(--c);height:24px}
+.lz button{font:inherit;font-size:.9rem;font-weight:500;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:999px;padding:5px 14px;cursor:pointer;margin:0 0 2px}
+.lz button:focus-visible,.lz input:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+.lz .panels{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lz .proto{margin-bottom:10px}
+@media (max-width:560px){.lz .panels{grid-template-columns:1fr}}
+.lz .plot-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.lz .plot-head span{font-family:var(--font-serif);font-weight:600;font-size:1rem}
+.lz .legend{display:flex;gap:14px;font-size:.82rem;color:var(--muted);margin-top:4px;flex-wrap:wrap}
+.lz .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.lz .status{font-size:.9rem;margin-top:10px;min-height:1.4em}
+.lz .readouts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+@media (max-width:500px){.lz .readouts{grid-template-columns:repeat(2,1fr)}}
+.lz .readout{border-top:2px solid var(--line);padding-top:4px}
+.lz .readout .k{font-family:var(--font-serif);font-style:italic;color:var(--muted);font-size:.9rem}
+.lz .readout .v{font-size:1rem;font-weight:600;font-variant-numeric:tabular-nums}
+.lz .fine{font-size:.82rem;color:var(--muted);margin-top:10px}
+.lz .ham{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center;margin:8px 0 4px}
+@media (max-width:560px){.lz .ham{grid-template-columns:1fr}}
+.lz .ham svg{width:150px;max-width:100%;touch-action:none;cursor:grab}
+.lz .ham svg.dragging{cursor:grabbing}
+.lz .ham .eq{font-family:var(--font-serif);font-size:1.05rem;font-style:italic}
+.lz .ham .eq b{font-style:normal;font-weight:600;color:var(--c)}
+.lz .ham .eqnote{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:.85rem;color:var(--muted);margin-top:8px;font-variant-numeric:tabular-nums}
+.lz .ham .eqnote .k{font-family:var(--font-serif);font-style:italic;font-weight:600;color:var(--c);white-space:nowrap}
+.lz .ham .eqnote b{color:var(--ink);font-weight:600}
+</style>
+
+<div class="units" role="group" aria-label="Units">
+  <button type="button" data-mode="phys" aria-pressed="true">Physical units</button>
+  <button type="button" data-mode="dimless" aria-pressed="false">Dimensionless</button>
+</div>
+
+<div class="ham panel" role="group" aria-label="The two atoms and the Hamiltonian with the current parameters">
+  <svg id="lzsc" viewBox="0 0 150 96" role="img" aria-label="Two atoms at distance R with their blockade disks, each shaded by its probability of being excited. Drag an atom to change R; the slider does the same."></svg>
+  <div>
+    <div class="eq" id="lzeq"></div>
+    <div class="eqnote" id="lzhn"></div>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="control"><label for="lzr"><span id="lzrk">Distance R</span><span id="lzrv"></span></label><input id="lzr" type="range" min="5" max="15" step="0.1" value="5"></div>
+  <div class="control"><label for="lzo"><span id="lzok">Ω/2π</span><span id="lzov"></span></label><input id="lzo" type="range" min="0.3" max="2" step="0.05" value="0.5"></div>
+  <div class="control"><label for="lzs"><span id="lzsk">Duration T</span><span id="lzsv"></span></label><input id="lzs" type="range" min="0.2" max="10" step="0.1" value="8"></div>
+  <div class="control"><label for="lzf"><span>Window ±δ<sub>f</sub>/Ω</span><span id="lzfv"></span></label><input id="lzf" type="range" min="4" max="20" step="0.5" value="12"></div>
+  <button id="lzplay" type="button" aria-label="Play or pause the sweep">Pause</button>
+</div>
+
+<div class="panels proto">
+  <div class="panel">
+    <div class="plot-head"><span>Protocol: amplitude Ω(t)</span></div>
+    <svg id="lzom" viewBox="0 0 360 130" role="img" aria-label="The amplitude against time: switched on smoothly, held, switched off smoothly. A cursor marks the current time."></svg>
+  </div>
+  <div class="panel">
+    <div class="plot-head"><span>Protocol: detuning δ(t)</span></div>
+    <svg id="lzde" viewBox="0 0 360 130" role="img" aria-label="The detuning against time: a straight ramp from minus delta f to plus delta f. A cursor marks the current time."></svg>
+  </div>
+</div>
+
+<div class="panels">
+  <div class="panel">
+    <div class="plot-head"><span>Instantaneous energies</span></div>
+    <svg id="lzsp" viewBox="0 0 360 240" role="img" aria-label="Energies of the three symmetric states of two atoms against the detuning. Dashed: the states without drive. Solid: with the drive, which opens a gap of root two Omega at each crossing. One dot per level, as opaque as the population of that level during the sweep."></svg>
+  </div>
+  <div class="panel">
+    <div class="plot-head"><span>Populations during the sweep</span></div>
+    <svg id="lzpo" viewBox="0 0 360 240" role="img" aria-label="Populations of gg, of the symmetric state and of rr against the detuning during the sweep, with the Landau-Zener prediction as a dashed line."></svg>
+    <div class="legend"><span><i style="background:var(--ink)"></i>gg</span><span><i style="background:var(--c)"></i>ψ<sub>+</sub> = (gr + rg)/√2</span><span><i style="background:var(--violet)"></i>rr</span><span><i style="background:none;height:0;border-top:2px dashed var(--muted)"></i>1 − P<sub>jump</sub></span></div>
+  </div>
+</div>
+<div class="status" id="lzstat"></div>
+
+<div class="readouts">
+  <div class="readout"><div class="k" id="lzbk">blockade shift C<sub>6</sub>/(ħR<sup>6</sup>)</div><div class="v" id="lzb"></div></div>
+  <div class="readout"><div class="k">P<sub>jump</sub> = e<sup>−πΩ²/v</sup></div><div class="v" id="lzpj"></div></div>
+  <div class="readout"><div class="k">final P(ψ<sub>+</sub>), P(rr)</div><div class="v" id="lzpf"></div></div>
+  <div class="readout"><div class="k">sweep rate v/Ω<sup>2</sup></div><div class="v" id="lzT"></div></div>
+</div>
+
+<p>Two atoms at distance R are driven by the same amplitude Ω while the detuning is swept linearly from −δ<sub>f</sub> to +δ<sub>f</sub> in a time T, at the rate v = 2δ<sub>f</sub>/T. Without the drive the levels |gg⟩, |ψ<sub>+</sub>⟩ and |rr⟩ cross at δ = 0 and at δ = C<sub>6</sub>/(ħR<sup>6</sup>), the blockade shift. The drive couples |gg⟩ to |ψ<sub>+</sub>⟩ and |ψ<sub>+</sub>⟩ to |rr⟩, and each crossing becomes an avoided crossing with gap √2 Ω. A slow sweep follows the ground state through the gaps; a fast one jumps across them with the Landau–Zener probability, which depends only on v/Ω². The rr level is named when it enters the plot; the dashed lines carry the colours of gg, ψ<sub>+</sub> and rr. The dots on the energy levels show where the state is: each is as opaque as the population of its level, so a jump shows up as weight left on the upper branch after the gap. Where the pair ends up is set by the blockade shift: if δ<sub>f</sub> &lt; C<sub>6</sub>/(ħR<sup>6</sup>) the sweep stops before the second crossing and the ground state is the Bell state |ψ<sub>+</sub>⟩, while if δ<sub>f</sub> &gt; C<sub>6</sub>/(ħR<sup>6</sup>) the pair crosses the second gap too and both atoms end up excited. Drag the atoms apart, or move the R slider, to bring the second crossing into the window, and shorten T to see the jumps appear. The dashed line in the population plot is 1 − P<sub>jump</sub>, the Landau–Zener prediction for the population that follows the ground state through one crossing.</p>
+<p class="fine">In the symmetric subspace H/ħ has the matrix [[0, Ω/√2, 0], [Ω/√2, −δ, Ω/√2], [0, Ω/√2, −2δ + C<sub>6</sub>/(ħR<sup>6</sup>)]] in the basis {|gg⟩, |ψ<sub>+</sub>⟩, |rr⟩}, with C<sub>6</sub>/ħ = 865 723 rad µs<sup>−1</sup> µm<sup>6</sup>; the antisymmetric state is never coupled. δ(t) = −δ<sub>f</sub> + v t with v = 2δ<sub>f</sub>/T. The two protocol panels show the drive: the amplitude is raised and lowered smoothly over the first and last stretch of detuning, 3Ω or 3√v from the ends whichever is wider, so that the drive is flat across the crossing region as the Landau–Zener formula assumes; with a drive switched on abruptly at a finite detuning, or a window so narrow that the two ramps meet before the drive is flat, the populations deviate from it; the detuning is a straight ramp. P<sub>jump</sub> = exp(−π Ω²/|v|) for the two-level crossing of gap √2 Ω. When δ<sub>f</sub> &gt; C<sub>6</sub>/(ħR<sup>6</sup>) the pair sees two crossings, and following both gives P(rr) ≈ (1 − P<sub>jump</sub>)². When C<sub>6</sub>/(ħR<sup>6</sup>) is comparable to Ω the two crossings overlap and the formula no longer applies. The disks in the sketch have radius R<sub>b</sub>/2 with R<sub>b</sub> = (C<sub>6</sub>/ħΩ)<sup>1/6</sup>: they overlap when the pair is blockaded, C<sub>6</sub>/(ħR<sup>6</sup>) &gt; Ω. The dimensionless view measures lengths in units of r<sub>min</sub> = 5 µm and energies in units of J<sub>max</sub> = C<sub>6</sub>/(ħ r<sub>min</sub><sup>6</sup>) = 55.4 rad/µs, as QoolQit does, so that the blockade shift is r<sup>−6</sup>. Integrated numerically on the three amplitudes, fixed-step fourth-order Runge–Kutta with no approximation to the model.</p>
+
+<script>
+(function(){
+const root=document.querySelector(".lz"), $=id=>root.querySelector("#"+id);
+const NS="http://www.w3.org/2000/svg";
+const el=(tag,attrs,parent)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent.appendChild(e);return e;};
+const css=v=>getComputedStyle(root).getPropertyValue(v).trim();
+const C6=865723.02, RMIN=5, JMAX=C6/Math.pow(RMIN,6), NP=600, P={l:46,r:14,t:12,b:30,w:360,h:240};
+let R=5, f=0.5, sv=8, kf=12, mode="phys", data=null, tau=0, playing=!matchMedia("(prefers-reduced-motion: reduce)").matches, last=null, raf=0;
+const sp=$("lzsp"), po=$("lzpo"), sc=$("lzsc");
+const om=$("lzom"), de=$("lzde");
+const gS=el("g",{},sp), gSL=el("g",{"clip-path":"url(#lzclip)"},sp), gP=el("g",{},po), gPL=el("g",{},po), gO=el("g",{},om), gOL=el("g",{},om), gD=el("g",{},de), gDL=el("g",{},de); // static and live layers of each plot
+
+// eigenpairs of a symmetric 3×3 matrix by Jacobi rotations, sorted by eigenvalue; vecs[j][i] is component j of eigenvector i
+function eig(A){const a=A.map(r=>r.slice()), v=[[1,0,0],[0,1,0],[0,0,1]];
+  for(let sw=0;sw<60;sw++){if(a[0][1]**2+a[0][2]**2+a[1][2]**2<1e-24)break;
+    for(let p=0;p<2;p++)for(let q=p+1;q<3;q++){if(Math.abs(a[p][q])<1e-300)continue;
+      const th=(a[q][q]-a[p][p])/(2*a[p][q]), t=(th>=0?1:-1)/(Math.abs(th)+Math.sqrt(th*th+1)), c=1/Math.sqrt(t*t+1), s=t*c;
+      for(let k=0;k<3;k++){const x=a[k][p],y=a[k][q];a[k][p]=c*x-s*y;a[k][q]=s*x+c*y;}
+      for(let k=0;k<3;k++){const x=a[p][k],y=a[q][k];a[p][k]=c*x-s*y;a[q][k]=s*x+c*y;}
+      for(let k=0;k<3;k++){const x=v[k][p],y=v[k][q];v[k][p]=c*x-s*y;v[k][q]=s*x+c*y;}}}
+  const o=[0,1,2].sort((i,j)=>a[i][i]-a[j][j]);
+  return {vals:o.map(i=>a[i][i]),vecs:v.map(r=>o.map(i=>r[i]))};}
+const Hm=(a,d,B)=>[[0,a,0],[a,-d,a],[0,a,-2*d+B]];
+
+function compute(){ // sweep δ = −δf + v t with a smooth switch of Ω over the first and last stretch; RK4 on the 3 amplitudes
+  const Om=2*Math.PI*f, B=C6/Math.pow(R,6), df=kf*Om, T=sv, v=2*df/T, ramp=Math.min(Math.max(3*Om,3*Math.sqrt(v)),df/2)/v; // the drive is flat over the crossing region, |δ| ≲ √v for a fast sweep, Ω for a slow one
+  const omt=t=>Om*(t<ramp?Math.sin(Math.PI/2*t/ramp)**2:t>T-ramp?Math.sin(Math.PI/2*(T-t)/ramp)**2:1), det=t=>-df+v*t;
+  const H=(t,re,im)=>{const a=omt(t)/Math.SQRT2, d=det(t), e=[0,-d,-2*d+B];
+    return [[a*re[1],a*im[1]],[a*(re[0]+re[2])+e[1]*re[1],a*(im[0]+im[2])+e[1]*im[1]],[a*re[1]+e[2]*re[2],a*im[1]+e[2]*im[2]]];};
+  const steps=Math.max(NP,Math.ceil(T/Math.min(0.004,0.3/(2*df+B)))), dt=T/steps; // exactly NP stored points whatever T, so every sweep animates alike
+  let re=[1,0,0], im=[0,0,0];
+  const traj=[], push=t=>traj.push({t,d:det(t),om:omt(t)/Om,p:re.map((x,i)=>x*x+im[i]*im[i]),re:re.slice(),im:im.slice()});
+  const deriv=(t,r,i)=>{const h=H(t,r,i);return [h.map(x=>x[1]),h.map(x=>-x[0])];}; // dψ/dt = −iHψ
+  push(0);
+  for(let s=0;s<steps;s++){const t=s*dt;
+    const k1=deriv(t,re,im), r2=re.map((x,j)=>x+dt/2*k1[0][j]), i2=im.map((x,j)=>x+dt/2*k1[1][j]);
+    const k2=deriv(t+dt/2,r2,i2), r3=re.map((x,j)=>x+dt/2*k2[0][j]), i3=im.map((x,j)=>x+dt/2*k2[1][j]);
+    const k3=deriv(t+dt/2,r3,i3), r4=re.map((x,j)=>x+dt*k3[0][j]), i4=im.map((x,j)=>x+dt*k3[1][j]);
+    const k4=deriv(t+dt,r4,i4);
+    re=re.map((x,j)=>x+dt/6*(k1[0][j]+2*k2[0][j]+2*k3[0][j]+k4[0][j]));im=im.map((x,j)=>x+dt/6*(k1[1][j]+2*k2[1][j]+2*k3[1][j]+k4[1][j]));
+    if(Math.floor((s+1)*NP/steps)>Math.floor(s*NP/steps))push((s+1)*dt);}
+  // spectrum over the window, with the full drive on
+  const spec=[];for(let k=0;k<=160;k++){const d=-df+2*df*k/160;spec.push({d,e:eig(Hm(Om/Math.SQRT2,d,B)).vals,dia:[0,-d,-2*d+B]});}
+  data={Om,B,v,df,T,traj,spec,pj:Math.exp(-Math.PI*Om*Om/v)};}
+
+const sx=d=>P.l+(P.w-P.l-P.r)*(d+data.df)/(2*data.df);
+const cols=()=>[css("--ink"),css("--c"),css("--violet")];
+const band=()=>{const {Om,df}=data, lo=-2*df-Om, hi=df+Om;return {lo,hi,sy:e=>P.h-P.b-(P.h-P.b-P.t)*(e-lo)/(hi-lo)};}; // band set by the window only, so the plot does not rescale with R or Ω
+function drawSpectrum(){gS.innerHTML="";const ink=css("--ink"), c=css("--c"), mu=css("--muted"), line=css("--line"), panel=css("--panel"), col=cols();
+  const {Om,B,df,spec}=data, {lo,hi,sy}=band(), span=hi-lo, step=span/Om>40?10:span/Om>16?5:2;
+  el("clipPath",{id:"lzclip"},gS).innerHTML='<rect x="'+P.l+'" y="'+P.t+'" width="'+(P.w-P.l-P.r)+'" height="'+(P.h-P.t-P.b)+'"/>';
+  const area=el("g",{"clip-path":"url(#lzclip)"},gS);
+  for(const k of [-df,-df/2,0,df/2,df]){el("line",{x1:sx(k),x2:sx(k),y1:P.t,y2:P.h-P.b,stroke:line},gS);
+    el("text",{x:sx(k),y:P.h-P.b+14,"text-anchor":"middle","font-size":11,fill:mu},gS).textContent=+(k/Om).toFixed(1);}
+  el("text",{x:(P.l+P.w-P.r)/2,y:P.h-3,"text-anchor":"middle","font-size":11,fill:mu},gS).textContent="detuning δ/Ω";
+  el("text",{x:12,y:(P.t+P.h-P.b)/2,"text-anchor":"middle","font-size":11,fill:mu,transform:"rotate(-90 12 "+(P.t+P.h-P.b)/2+")"},gS).textContent="energy E/ħΩ";
+  for(let k=Math.ceil(lo/Om/step)*step;k*Om<=hi;k+=step){el("line",{x1:P.l,x2:P.w-P.r,y1:sy(k*Om),y2:sy(k*Om),stroke:line},gS);el("text",{x:P.l-5,y:sy(k*Om)+4,"text-anchor":"end","font-size":11,fill:mu},gS).textContent=k;}
+  const path=get=>spec.map((s,k)=>(k?"L":"M")+sx(s.d).toFixed(1)+" "+sy(get(s)).toFixed(1)).join("");
+  col.forEach((cl,j)=>el("path",{d:path(s=>s.dia[j]),fill:"none",stroke:cl,"stroke-width":1.5,"stroke-opacity":.5,"stroke-dasharray":"4 4"},area));
+  [0,1,2].forEach(j=>el("path",{d:path(s=>s.e[j]),fill:"none",stroke:j?mu:ink,"stroke-width":j?1.5:2.5},area));
+  // the two gaps, between the two lowest levels at δ = 0 and at δ = B
+  for(const d of [0,B]){if(d>df)continue;const [e0,e1]=eig(Hm(Om/Math.SQRT2,d,B)).vals, left=sx(d)>P.w-P.r-50; // label on the left when the gap sits under the end labels
+    el("line",{x1:sx(d),x2:sx(d),y1:sy(e0),y2:sy(e1),stroke:c,"stroke-width":2},area);
+    el("text",{x:sx(d)+(left?-5:5),y:(sy(e0)+sy(e1))/2+4,"text-anchor":left?"end":"start","font-size":10.5,fill:c,"font-weight":600,stroke:panel,"stroke-width":3,"paint-order":"stroke"},area).textContent="√2Ω";}
+  // the rr level is named at the right end when it is inside the band; gg and ψ+ are told apart by the dashed lines
+  const err=-2*df+B;if(err<hi-Om)el("text",{x:P.w-P.r-3,y:sy(err)-5,"text-anchor":"end","font-size":10.5,fill:col[2],"font-weight":600,stroke:panel,"stroke-width":3,"paint-order":"stroke"},gS).textContent="rr";
+  sp.style.color=ink;}
+function spectrumLive(){gSL.innerHTML="";const ink=css("--ink"), c=css("--c"), {Om,B}=data, {sy}=band();
+  // one dot per level, as opaque as the population of that instantaneous eigenstate
+  const q=data.traj[idx()], {vals,vecs}=eig(Hm(Om/Math.SQRT2*q.om,q.d,B));
+  for(let i=0;i<3;i++){const pr=vecs.reduce((s,r,j)=>s+r[i]*q.re[j],0), pi=vecs.reduce((s,r,j)=>s+r[i]*q.im[j],0), pop=pr*pr+pi*pi;
+    el("circle",{cx:sx(q.d),cy:sy(vals[i]),r:5,fill:c,"fill-opacity":pop,stroke:ink,"stroke-opacity":pop,"stroke-width":1},gSL);}}
+
+const py=p=>P.h-P.b-(P.h-P.b-P.t)*p, ppath=(get,upto)=>data.traj.slice(0,upto+1).map((q,k)=>(k?"L":"M")+sx(q.d).toFixed(1)+" "+py(get(q)).toFixed(1)).join("");
+function drawPop(){gP.innerHTML="";const ink=css("--ink"), mu=css("--muted"), line=css("--line"), violet=css("--violet"), col=cols();
+  const {df,Om,traj,pj,B}=data;
+  for(const v of [0,0.25,0.5,0.75,1]){el("line",{x1:P.l,x2:P.w-P.r,y1:py(v),y2:py(v),stroke:line},gP);
+    el("text",{x:P.l-5,y:py(v)+4,"text-anchor":"end","font-size":11,fill:mu},gP).textContent=v.toFixed(2);}
+  for(const k of [-df,-df/2,0,df/2,df]){el("line",{x1:sx(k),x2:sx(k),y1:P.t,y2:P.h-P.b,stroke:line},gP);
+    el("text",{x:sx(k),y:P.h-P.b+14,"text-anchor":"middle","font-size":11,fill:mu},gP).textContent=+(k/Om).toFixed(1);}
+  el("text",{x:(P.l+P.w-P.r)/2,y:P.h-3,"text-anchor":"middle","font-size":11,fill:mu},gP).textContent="detuning δ(t)/Ω";
+  if(B<=df)el("line",{x1:sx(B),x2:sx(B),y1:P.t,y2:P.h-P.b,stroke:violet,"stroke-opacity":.5,"stroke-dasharray":"2 3"},gP);
+  el("path",{d:ppath(q=>q.om,traj.length-1),fill:"none",stroke:mu,"stroke-opacity":.35,"stroke-width":1},gP); // Ω(t)/Ω
+  if(B>=2*Om)el("line",{x1:P.l,x2:P.w-P.r,y1:py(1-pj),y2:py(1-pj),stroke:mu,"stroke-width":1.5,"stroke-dasharray":"5 4"},gP); // no prediction when the two crossings overlap
+  col.forEach((cl,j)=>el("path",{d:ppath(q=>q.p[j],traj.length-1),fill:"none",stroke:cl,"stroke-width":2,"stroke-opacity":.3},gP)); // the whole sweep, faint
+  po.style.color=ink;}
+function popLive(){gPL.innerHTML="";const ink=css("--ink"), panel=css("--panel"), col=cols(), n=idx(), q=data.traj[n];
+  col.forEach((cl,j)=>el("path",{d:ppath(x=>x.p[j],n),fill:"none",stroke:cl,"stroke-width":2},gPL)); // the sweep so far, solid
+  el("line",{x1:sx(q.d),x2:sx(q.d),y1:P.t,y2:P.h-P.b,stroke:ink,"stroke-opacity":.5},gPL);
+  col.forEach((cl,j)=>el("circle",{cx:sx(q.d),cy:py(q.p[j]),r:4,fill:cl,stroke:panel,"stroke-width":2},gPL));}
+
+const Q={l:46,r:14,t:10,b:28,w:360,h:130}, tx=t=>Q.l+(Q.w-Q.l-Q.r)*t/data.T, qy=(v,lo,hi)=>Q.h-Q.b-(Q.h-Q.b-Q.t)*(v-lo)/(hi-lo);
+function drawProto(){const ink=css("--ink"), c=css("--c"), mu=css("--muted"), line=css("--line"), ph=mode==="phys", {Om,df,T,traj}=data;
+  const u=ph?2*Math.PI:JMAX, unit=ph?"/2π (MHz)":" (J_max)", tu=ph?" (µs)":" (1/J_max)", ts=ph?1:JMAX; // energies shown as f = ω/2π in MHz, or ω/J_max
+  for(const [g,get,lo,hi,label,col] of [[gO,q=>q.om*Om/u,0,1.15*Om/u,"Ω"+unit,c],[gD,q=>q.d/u,-1.15*df/u,1.15*df/u,"δ"+unit,mu]]){g.innerHTML="";
+    for(const k of [0,0.5,1]){el("line",{x1:tx(k*T),x2:tx(k*T),y1:Q.t,y2:Q.h-Q.b,stroke:line},g);el("text",{x:tx(k*T),y:Q.h-Q.b+13,"text-anchor":"middle","font-size":11,fill:mu},g).textContent=(k*T*ts).toFixed(ph?2:0);}
+    el("text",{x:(Q.l+Q.w-Q.r)/2,y:Q.h-2,"text-anchor":"middle","font-size":11,fill:mu},g).textContent="time t"+tu;
+    for(const v of (lo<0?[lo/1.15,0,hi/1.15]:[0,hi/1.15])){el("line",{x1:Q.l,x2:Q.w-Q.r,y1:qy(v,lo,hi),y2:qy(v,lo,hi),stroke:line},g);el("text",{x:Q.l-5,y:qy(v,lo,hi)+4,"text-anchor":"end","font-size":11,fill:mu},g).textContent=(v>=0?"":"−")+Math.abs(v).toFixed(2);}
+    el("text",{x:12,y:(Q.t+Q.h-Q.b)/2,"text-anchor":"middle","font-size":11,fill:mu,transform:"rotate(-90 12 "+(Q.t+Q.h-Q.b)/2+")"},g).textContent=label;
+    el("path",{d:traj.map((q,k)=>(k?"L":"M")+tx(q.t).toFixed(1)+" "+qy(get(q),lo,hi).toFixed(1)).join(""),fill:"none",stroke:col,"stroke-width":2},g);}
+  om.style.color=ink;de.style.color=ink;}
+function protoLive(){const ink=css("--ink"), c=css("--c"), mu=css("--muted"), panel=css("--panel"), ph=mode==="phys", {Om,df}=data, u=ph?2*Math.PI:JMAX, q=data.traj[idx()];
+  for(const [g,v,lo,hi,col] of [[gOL,q.om*Om/u,0,1.15*Om/u,c],[gDL,q.d/u,-1.15*df/u,1.15*df/u,mu]]){g.innerHTML="";
+    el("line",{x1:tx(q.t),x2:tx(q.t),y1:Q.t,y2:Q.h-Q.b,stroke:ink,"stroke-opacity":.5},g);
+    el("circle",{cx:tx(q.t),cy:qy(v,lo,hi),r:4,fill:col,stroke:panel,"stroke-width":2},g);}}
+function drawScene(){sc.innerHTML="";const ink=css("--ink"), c=css("--c"), mu=css("--muted"), panel=css("--panel");
+  const S=6, Rb=Math.pow(C6/data.Om,1/6), q=data.traj[idx()], n=q.p[1]/2+q.p[2], ph=mode==="phys"; // px per µm; ⟨n_i⟩ of either atom
+  for(const x of [75-R*S/2,75+R*S/2]){el("circle",{cx:x,cy:42,r:Rb*S/2,fill:c,"fill-opacity":.07,stroke:c,"stroke-opacity":.35,"stroke-dasharray":"2 4"},sc);}
+  el("line",{x1:75-R*S/2,x2:75+R*S/2,y1:42,y2:42,stroke:mu,"stroke-opacity":.6},sc);
+  for(const x of [75-R*S/2,75+R*S/2]){el("circle",{cx:x,cy:42,r:8,fill:ink,stroke:panel,"stroke-width":2},sc);el("circle",{cx:x,cy:42,r:8,fill:c,"fill-opacity":n},sc);}
+  el("text",{x:75,y:84,"text-anchor":"middle","font-size":10.5,fill:mu},sc).textContent=ph?"R = "+R.toFixed(1)+" µm":"r = "+(R/RMIN).toFixed(2);
+  el("text",{x:75,y:12,"text-anchor":"middle","font-size":10.5,fill:mu},sc).textContent="⟨n⟩ = "+n.toFixed(2)+" each";
+  sc.style.color=ink;}
+
+const idx=()=>{const {traj,T}=data;let k=Math.round(tau/T*(traj.length-1));return Math.max(0,Math.min(traj.length-1,k));};
+function text(){const {Om,B,v,df,T,traj,pj}=data, last=traj[traj.length-1].p, fm=x=>x.toFixed(2), ph=mode==="phys";
+  const Tt=ph?sv.toFixed(1)+" µs":(sv*JMAX).toFixed(0), Bo=(B/Om).toFixed(1)+" Ω";
+  $("lzrk").textContent=ph?"Distance R":"Distance r";$("lzok").textContent=ph?"Ω/2π":"Amplitude Ω";$("lzsk").textContent=ph?"Duration T":"Duration T";
+  $("lzrv").textContent=ph?R.toFixed(1)+" µm":(R/RMIN).toFixed(2);$("lzov").textContent=ph?f.toFixed(2)+" MHz":(Om/JMAX).toFixed(3);$("lzsv").textContent=Tt;$("lzfv").textContent=kf.toFixed(1);
+  $("lzbk").innerHTML=ph?"blockade shift C<sub>6</sub>/(ħR<sup>6</sup>)":"blockade shift r<sup>−6</sup>";
+  $("lzb").textContent=(ph?"2π × "+(B/(2*Math.PI)).toFixed(2)+" MHz":(B/JMAX).toFixed(2))+" = "+Bo;$("lzpj").textContent=B<2*Om?"n/a":pj.toFixed(3);
+  $("lzpf").textContent=fm(last[1])+", "+fm(last[2]);$("lzT").textContent=(v/(Om*Om)).toFixed(2);
+  $("lzeq").innerHTML=(ph?"H(t)/ħ":"H(t)/J<sub>max</sub>")+" = <b>Ω(t)</b>/2 (X<sub>1</sub> + X<sub>2</sub>) − <b>δ(t)</b> (n<sub>1</sub> + n<sub>2</sub>) + <b>"+(ph?"C<sub>6</sub>/(ħR<sup>6</sup>)":"r<sup>−6</sup>")+"</b> n<sub>1</sub>n<sub>2</sub>";
+  const row=(k,v)=>'<span class="k">'+k+'</span><span>'+v+'</span>';
+  $("lzhn").innerHTML=row("Ω(t)",(ph?"Ω/2π = <b>"+f.toFixed(2)+" MHz</b>":"Ω = <b>"+(Om/JMAX).toFixed(3)+" J<sub>max</sub></b>")+", switched on and off smoothly at the ends")
+    +row("δ(t)","swept from <b>−"+kf.toFixed(1)+" Ω</b> to <b>+"+kf.toFixed(1)+" Ω</b> in T = <b>"+Tt+(ph?"":" /J<sub>max</sub>")+"</b>, now δ = <b id=\"lzhd\"></b>")
+    +row(ph?"C<sub>6</sub>/(ħR<sup>6</sup>)":"r<sup>−6</sup>",(ph?"2π × <b>"+(B/(2*Math.PI)).toFixed(2)+" MHz</b>":"<b>"+(B/JMAX).toFixed(2)+" J<sub>max</sub></b>")+" = <b>"+Bo+"</b>, the blockade shift");
+  const weak=B<2*Om, fast=pj>0.3, Bs=ph?"C6/(ħR⁶)":"r⁻⁶"; // the status is plain text
+  $("lzstat").textContent=weak?"Blockade too weak: "+Bs+" = "+Bo+", the two crossings overlap and the pair is close to two independent atoms, the Landau–Zener picture no longer applies."
+    :fast?"Too fast: T = "+Tt+" gives v = "+(v/(Om*Om)).toFixed(1)+" Ω², the pair jumps across the gap with probability "+fm(pj)+" and mostly stays in |gg⟩."
+    :df<B?"Bell state: δf = "+kf.toFixed(1)+" Ω stays below "+Bs+" = "+Bo+", the sweep stops before the second crossing and the ground state is |ψ+⟩, reached with probability "+fm(last[1])+"."
+    :"Both excited: δf = "+kf.toFixed(1)+" Ω exceeds "+Bs+" = "+Bo+", the pair follows the ground state through both crossings into |rr⟩, with probability "+fm(last[2])+" against (1 − Pjump)² = "+fm((1-pj)**2)+".";}
+function frame(){const q=data.traj[idx()];$("lzhd").textContent=(q.d>=0?"+":"−")+Math.abs(q.d/data.Om).toFixed(1)+" Ω";drawScene();protoLive();spectrumLive();popLive();}
+const redraw=()=>{text();drawProto();drawSpectrum();drawPop();frame();};
+function refresh(){compute();tau=playing?Math.min(tau,data.T):data.T;redraw();}
+
+const btn=$("lzplay"), setBtn=()=>btn.textContent=playing?"Pause":"Play";
+const playFor=()=>Math.min(8,Math.max(2,2*data.T)); // seconds of playback: 2 s per µs of T, never under 2 s nor over 8 s; the 600 stored points are the same for every T
+function loop(ts){raf=0;if(!playing)return;if(last!==null)tau=(tau+(ts-last)/1000*(data.T/playFor()))%data.T;last=ts;frame();raf=requestAnimationFrame(loop);}
+btn.addEventListener("click",()=>{playing=!playing;last=null;setBtn();if(playing)raf=raf||requestAnimationFrame(loop);}); // pause freezes the cursor; the full curves stay visible
+$("lzr").addEventListener("input",e=>{R=+e.target.value;refresh();});
+// drag either atom of the sketch: R follows the pointer, symmetric about the centre, like the two-atom blockade widget
+let dragging=false;
+const toUser=ev=>{const q=sc.createSVGPoint();q.x=ev.clientX;q.y=ev.clientY;return q.matrixTransform(sc.getScreenCTM().inverse());};
+const pull=ev=>{const u=toUser(ev), r=Math.min(15,Math.max(5,Math.round(2*Math.abs(u.x-75)/6*10)/10));if(r===R)return;$("lzr").value=r;$("lzr").dispatchEvent(new Event("input"));}; // same path as the slider
+sc.addEventListener("pointerdown",ev=>{dragging=true;sc.classList.add("dragging");sc.setPointerCapture(ev.pointerId);pull(ev);});
+sc.addEventListener("pointermove",ev=>{if(dragging)pull(ev);});
+const drop=()=>{dragging=false;sc.classList.remove("dragging");};
+sc.addEventListener("pointerup",drop);sc.addEventListener("pointercancel",drop);
+$("lzo").addEventListener("input",e=>{f=+e.target.value;refresh();});
+$("lzs").addEventListener("input",e=>{sv=+e.target.value;refresh();});
+$("lzf").addEventListener("input",e=>{kf=+e.target.value;refresh();});
+root.querySelectorAll(".units button").forEach(b=>b.addEventListener("click",()=>{mode=b.dataset.mode;root.querySelectorAll(".units button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));redraw();}));
+new MutationObserver(redraw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+setBtn();refresh();if(playing)raf=requestAnimationFrame(loop);
+})();
+</script>
+</div>

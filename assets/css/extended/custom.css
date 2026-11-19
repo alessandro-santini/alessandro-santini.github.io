@@ -1,0 +1,302 @@
+/* Palette: near-white, graphite, one accent. Serif headings, sans body.
+   The accent colour is set in hugo.yaml (params.accent) and injected in extend_head.html. */
+
+:root {
+  --theme: #FBFBF9;
+  --entry: #FBFBF9;
+  --primary: #1B1B1B;
+  --secondary: #6B6B66;
+  --tertiary: #ECEBE6;
+  --content: #1B1B1B;
+  --code-block-bg: #F1F0EB;
+  --code-bg: #F1F0EB;
+  --border: #E2E1DB;
+  --main-width: 680px;
+  --header-height: 64px;
+  --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+:root[data-theme="dark"] {
+  --theme: #16181A;
+  --entry: #16181A;
+  --primary: #E6E4DC;
+  --secondary: #9A9890;
+  --tertiary: #23262A;
+  --content: #E6E4DC;
+  --code-block-bg: #1F2225;
+  --code-bg: #1F2225;
+  --border: #2C2F33;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.65;
+  background: var(--theme);
+  color: var(--content);
+}
+
+/* Header */
+.header,
+.list {
+  background: var(--theme);
+}
+.nav {
+  max-width: calc(var(--main-width) + var(--gap) * 2);
+}
+.logo a {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: 0;
+}
+#menu a {
+  font-size: 15px;
+  color: var(--secondary);
+}
+#menu a:hover,
+#menu .active {
+  color: var(--primary);
+}
+#menu .active {
+  font-weight: 500;
+  box-shadow: 0 2px 0 var(--accent);
+}
+
+/* Headings */
+h1, h2, h3, h4,
+.post-title,
+.page-header h1 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--primary);
+}
+.post-content h2 {
+  font-size: 24px;
+  margin: 44px 0 14px;
+}
+.post-content h3 {
+  font-size: 20px;
+  margin: 32px 0 8px;
+}
+.post-content h2 .anchor,
+.post-content h3 .anchor {
+  color: var(--border);
+}
+.page-header {
+  margin: 28px 0 28px;
+}
+.page-header h1 {
+  font-size: 34px;
+  line-height: 1.15;
+}
+.post-description {
+  color: var(--secondary);
+  font-size: 17px;
+  margin-top: 8px;
+  max-width: 55ch;
+}
+
+/* Body text and links */
+.post-content {
+  color: var(--content);
+  font-size: 17px;
+  line-height: 1.65;
+}
+.post-content p {
+  margin: 0 0 18px;
+}
+.post-content a,
+.home-tagline a {
+  color: var(--accent);
+  text-decoration: none;
+  box-shadow: none;
+  border-bottom: 1px solid transparent;
+}
+.post-content a:hover,
+.home-tagline a:hover {
+  border-bottom-color: var(--accent);
+}
+.post-content ul {
+  padding-inline-start: 20px;
+}
+.post-content li {
+  margin: 4px 0;
+}
+.post-content code {
+  font-size: 0.9em;
+  background: var(--code-bg);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+
+/* Home */
+.home .post-header {
+  margin: 36px 0 20px;
+}
+.home-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 32px;
+}
+.home-photo {
+  flex: none;
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-top: 6px;
+  /* Hairline accent ring, set off from the photo by a gap of page background. */
+  box-shadow: 0 0 0 4px var(--theme), 0 0 0 5px var(--accent);
+}
+.lattice {
+  display: block;
+  width: 100%;
+  height: 44px;
+  color: var(--accent);
+  margin: 0 0 24px;
+}
+.post-single:not(.home) .lattice {
+  margin: -6px 0 28px;
+}
+/* Interactive register (script in _partials/lattice.html). Resting state matches the static drawing. */
+.lattice { -webkit-tap-highlight-color: transparent; }
+.lattice .atom { outline: none; }
+.lattice .hit { cursor: pointer; }
+.lattice .blk .hit { cursor: default; }
+.lattice .ring { opacity: 0; }
+.lattice .atom:focus-visible .ring { opacity: .55; }
+.lattice .dot { transition: opacity .5s ease; }
+.lattice.live .blk .dot { opacity: .35; }
+.lattice .halo {
+  opacity: 0;
+  transform: scale(.6);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: opacity .5s cubic-bezier(.22, 1, .36, 1), transform .5s cubic-bezier(.22, 1, .36, 1);
+}
+.lattice .halo.on { opacity: 1; transform: none; }
+.lattice .bond { transition: stroke-dashoffset .5s cubic-bezier(.22, 1, .36, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .lattice .dot, .lattice .halo, .lattice .bond { transition: none; }
+}
+.home-tagline {
+  font-family: var(--font-serif);
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--primary);
+  margin: 0 0 18px;
+  max-width: 28ch;
+}
+.home .social-icons {
+  padding: 0;
+  margin-top: 6px;
+}
+.home .social-icons a {
+  margin-inline-end: 14px;
+  color: var(--secondary);
+}
+.home .social-icons a:hover {
+  color: var(--accent);
+}
+.social-icons svg {
+  height: 22px;
+  width: 22px;
+}
+
+/* Projects: hairline-separated sections, metadata line under the title */
+.project {
+  padding: 26px 0 8px;
+  border-top: 1px solid var(--border);
+}
+.project:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+.project h3 {
+  margin: 0 0 4px;
+}
+.project .project-role {
+  color: var(--secondary);
+  font-size: 15px;
+  margin: 0 0 12px;
+}
+
+/* Publications: year column on the left */
+.pub-list h2 {
+  margin-top: 40px;
+}
+.pub {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 0 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  font-size: 16px;
+  line-height: 1.5;
+}
+.pub:first-of-type,
+h2 + .pub {
+  border-top: none;
+}
+.pub-year {
+  color: var(--secondary);
+  font-variant-numeric: tabular-nums;
+  padding-top: 1px;
+}
+.pub-title {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 2px;
+  line-height: 1.3;
+}
+.pub-authors {
+  color: var(--content);
+}
+.pub-venue {
+  color: var(--secondary);
+}
+.pub-links {
+  display: inline;
+}
+.pub-links a {
+  margin-right: 10px;
+  font-size: 0.9em;
+}
+
+/* Footer and misc */
+.footer {
+  color: var(--secondary);
+  font-size: 14px;
+}
+.top-link {
+  background: var(--tertiary);
+  color: var(--primary);
+}
+@media (max-width: 500px) {
+  body { font-size: 16px; }
+  .home-tagline { font-size: 24px; }
+  .home-header { flex-direction: column-reverse; gap: 18px; }
+  .home-photo { width: 112px; height: 112px; margin-top: 0; }
+  .page-header h1 { font-size: 28px; }
+  .pub { grid-template-columns: 1fr; }
+  .pub-year { font-size: 14px; margin-bottom: 2px; }
+}
+
+/* Course page: list of widgets */
+.widgets { list-style: none; counter-reset: w; padding: 0; margin: 4px 0 0; }
+.widgets li { counter-increment: w; display: grid; grid-template-columns: 2.2em 1fr; grid-template-rows: auto auto; column-gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.widgets li::before { content: counter(w, decimal-leading-zero); grid-row: 1 / 3; font-family: var(--font-serif); font-style: italic; font-size: 0.95rem; color: var(--accent); padding-top: 3px; }
+.post-content .widgets a { font-family: var(--font-serif); font-size: 1.2rem; font-weight: 600; color: var(--primary); text-decoration: none; box-shadow: none; }
+.post-content .widgets a:hover { color: var(--accent); }
+.widgets span { color: var(--secondary); font-size: 0.95rem; line-height: 1.5; margin-top: 2px; }
+
+/* Work-in-progress note on the course page */
+.wip { display: flex; align-items: center; gap: 8px; color: var(--secondary); font-size: 0.95rem; }
+.wip svg { flex: none; color: var(--accent); }

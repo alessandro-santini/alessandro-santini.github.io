@@ -1,0 +1,2 @@
+{{- /* Inline an HTML fragment from assets/widgets/NAME.html. Usage in markdown: widget "blockade" between shortcode delimiters. */ -}}
+{{ (resources.Get (printf "widgets/%s.html" (.Get 0))).Content | safeHTML }}

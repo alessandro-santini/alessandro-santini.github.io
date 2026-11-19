@@ -1,0 +1,15 @@
+{{- define "main" }}
+<article class="post-single home">
+  <header class="post-header home-header">
+    <div class="home-intro">
+      <h1 class="home-tagline">{{ .Params.tagline | markdownify }}</h1>
+      {{- partial "social_icons.html" -}}
+    </div>
+    <img class="home-photo" src="/me.jpg" alt="Alessandro Santini" width="160" height="160" loading="eager">
+  </header>
+  {{ partial "lattice.html" . }}
+  <div class="post-content">
+    {{ .Content }}
+  </div>
+</article>
+{{- end }}

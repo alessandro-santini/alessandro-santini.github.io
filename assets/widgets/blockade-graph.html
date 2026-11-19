@@ -1,0 +1,202 @@
+<div class="bgraph">
+<style>
+.bgraph{--panel:var(--entry);--ink:var(--primary);--muted:var(--secondary);--line:var(--border);--c:var(--accent);--bad:#B3261E;--violet:#5B63A6;margin:16px 0}
+:root[data-theme="dark"] .bgraph{--bad:#F28B82;--violet:#8088D0}
+.bgraph .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.bgraph svg{display:block;width:100%;height:auto;touch-action:none}
+.bgraph svg g:focus{outline:none}
+.bgraph svg g:focus-visible circle.core{stroke:var(--c);stroke-width:3}
+.bgraph .controls{display:grid;grid-template-columns:1fr 1fr auto;gap:8px 20px;align-items:end;margin:12px 0}
+@media (max-width:560px){.bgraph .controls{grid-template-columns:1fr}}
+.bgraph .control label{display:flex;justify-content:space-between;font-size:.9rem}
+.bgraph .control label span:last-child{font-variant-numeric:tabular-nums;color:var(--muted)}
+.bgraph input[type=range]{width:100%;accent-color:var(--c);height:24px}
+.bgraph button{font:inherit;font-size:.9rem;font-weight:500;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:999px;padding:5px 14px;cursor:pointer;margin:0 0 2px 4px}
+.bgraph button[aria-pressed="true"]{background:var(--c);color:var(--theme);border-color:var(--c)}
+.bgraph button:focus-visible,.bgraph input:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+.bgraph .panels{display:grid;grid-template-columns:3fr 2fr;gap:10px}
+@media (max-width:560px){.bgraph .panels{grid-template-columns:1fr}}
+.bgraph .plot-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.bgraph .plot-head span{font-family:var(--font-serif);font-weight:600;font-size:1rem}
+.bgraph .status{font-size:.9rem;margin-top:8px;min-height:1.4em}
+.bgraph .status.bad{color:var(--bad)}
+.bgraph .hint{font-size:.82rem;color:var(--muted);margin-top:4px}
+.bgraph .below{display:grid;grid-template-columns:auto 1fr;gap:16px 24px;align-items:start;margin:12px 0}
+@media (max-width:560px){.bgraph .below{grid-template-columns:1fr}}
+.bgraph .matrix{display:grid;gap:2px;font-size:.75rem;font-variant-numeric:tabular-nums;color:var(--muted)}
+.bgraph .matrix div{width:28px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:3px}
+.bgraph .matrix .cell{background:var(--line)}
+.bgraph .matrix .on{background:var(--c);color:var(--theme)}
+.bgraph .matrix .broken{background:var(--violet);color:var(--theme)}
+.bgraph .matrix .diag{background:transparent;border:1px dashed var(--line);font-size:.62rem;color:var(--ink)}
+.bgraph .matrix .x{color:var(--c);font-weight:700}
+.bgraph .readouts{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media (max-width:560px){.bgraph .readouts{grid-template-columns:repeat(4,1fr)}}
+@media (max-width:420px){.bgraph .readouts{grid-template-columns:repeat(2,1fr)}}
+.bgraph .readout{border-top:2px solid var(--line);padding-top:4px}
+.bgraph .readout .k{font-family:var(--font-serif);font-style:italic;color:var(--muted);font-size:.9rem}
+.bgraph .readout .v{font-size:1rem;font-weight:600;font-variant-numeric:tabular-nums}
+.bgraph .fine{font-size:.82rem;color:var(--muted);margin-top:10px}
+</style>
+
+<div class="controls">
+  <div class="control">
+    <label for="bgo"><span>Amplitude Ω</span><span id="bgov"></span></label>
+    <input id="bgo" type="range" min="0.02" max="0.5" step="0.01" value="0.1" list="bgo-ticks">
+    <datalist id="bgo-ticks"><option value="0.23"></option></datalist>
+  </div>
+  <div class="control">
+    <label for="bgd"><span>Detuning δ</span><span id="bgdv"></span></label>
+    <input id="bgd" type="range" min="-1" max="3" step="0.05" value="0.5" list="bgd-ticks">
+    <datalist id="bgd-ticks"><option value="0"></option><option value="1"></option></datalist>
+  </div>
+  <div><button id="bgadd" type="button">+ atom</button><button id="bgrm" type="button">− atom</button><button id="bgdmm" type="button" aria-pressed="false">Local detuning (DMM)</button></div>
+</div>
+
+<div class="panels">
+  <div class="panel">
+    <svg id="bgs" viewBox="0 0 360 240" role="group" aria-label="Draggable atoms with blockade disks, the ground state highlighted. Each atom can be focused: arrow keys move it, plus and minus change its weight, Enter toggles the local detuning.">
+      <g id="bgdisks"></g><g id="bgedges"></g><g id="bgatoms"></g>
+      <g transform="translate(14,228)"><line x1="0" x2="60" y1="0" y2="0" stroke="currentColor" stroke-opacity=".5" stroke-width="2"/><text x="30" y="-6" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity=".6">r = 1</text></g>
+    </svg>
+    <div class="status" id="bgstat"></div>
+    <div class="hint" id="bghint"></div>
+  </div>
+  <div class="panel">
+    <div class="plot-head"><span>Bitstrings by energy</span></div>
+    <svg id="bgc" role="img" aria-label="Bar chart of the classical energy of each bitstring, lowest first"></svg>
+  </div>
+</div>
+
+<div class="below">
+  <div class="matrix" id="bgm" role="img" aria-label="Adjacency matrix of the blockade graph with the detuning of each atom on the diagonal, excited atoms in the accent colour"></div>
+  <div class="readouts">
+    <div class="readout"><div class="k">R<sub>b</sub> = Ω<sup>−1/6</sup></div><div class="v" id="bgrb"></div></div>
+    <div class="readout"><div class="k">edges</div><div class="v" id="bge"></div></div>
+    <div class="readout"><div class="k">excited atoms</div><div class="v" id="bgn"></div></div>
+    <div class="readout"><div class="k">E of ground state</div><div class="v" id="bge0"></div></div>
+  </div>
+</div>
+
+<p>With the drive off the Hamiltonian is diagonal, and the ground state is simply the bitstring x of lowest classical energy E(x). The detuning δ sets the regime. For δ &lt; 0 every excitation costs energy and no atom is excited. For δ &gt; 0 but below the interaction J of the weakest neighbouring pair (and above the total tail interaction Σ J<sub>ij</sub> felt inside the maximum independent set, which is small when the graph is well separated), each excitation gains δ but two neighbours would pay J &gt; δ, so the ground state excites as many atoms as possible with no two of them adjacent: a maximum independent set of the blockade graph. For δ above the J of an edge the gain outweighs the interaction, that pair gets excited together and the blockade is broken on it; such edges are drawn in violet, as is their cell in the matrix. Each edge carries the distance between its two atoms, in units of r<sub>min</sub>. The status line names the regime and the two values of J that bound it. Drag the atoms to change the graph. Ω only sets which pairs count as edges, through R<sub>b</sub>; the classical ground state never sees it, only δ against the J<sub>ij</sub>, so moving the Ω slider redraws the graph but not the highlighted bitstring. The detuning map modulator (DMM) lets each atom see its own detuning δ<sub>i</sub> = δ + ε<sub>i</sub> Δ, with one shared waveform Δ ≤ 0 and a weight ε<sub>i</sub> between 0 and 1 per atom. Click an atom once to switch it on, then click to raise that atom's weight and shift-click or right-click to lower it: the problem becomes a maximum weight independent set.</p>
+<p class="fine">E(x) = Σ<sub>i&lt;j</sub> J<sub>ij</sub> x<sub>i</sub> x<sub>j</sub> − Σ<sub>i</sub> δ<sub>i</sub> x<sub>i</sub> with J<sub>ij</sub> = r<sub>ij</sub><sup>−6</sup>, distances in units of r<sub>min</sub>, energies in units of J<sub>max</sub>. Disks have radius R<sub>b</sub>/2 and an edge joins two atoms whose disks overlap. A red edge marks a pair closer than r = 1, which the device would reject. The Ω slider goes beyond the device maximum 0.2268, marked by the tick. The number inside an atom is its index, or its weight w<sub>i</sub> once the DMM is on, and then δ<sub>i</sub> = δ + ε<sub>i</sub> Δ with ε<sub>i</sub> = 1 − w<sub>i</sub>/max w and Δ = −δ, or 0 when δ &lt; 0 since the DMM can only lower the detuning, so the heaviest atom keeps the full detuning. The chart lists the lowest ten of the 2<sup>N</sup> bitstrings, atom 1 on the left. The matrix has a 1 on every edge and, on the diagonal, the detuning δ<sub>i</sub> each atom sees, which enters E(x) as −δ<sub>i</sub>x<sub>i</sub>; the indices of the excited atoms are in the accent colour, so an independent set never has a 1 at the crossing of two coloured indices. A violet cell is an edge whose two atoms are excited together, a broken blockade.</p>
+
+<script>
+(function(){
+const root=document.querySelector(".bgraph"), $=id=>root.querySelector("#"+id);
+const NS="http://www.w3.org/2000/svg";
+const el=(tag,attrs,parent)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent.appendChild(e);return e;};
+const css=v=>getComputedStyle(root).getPropertyValue(v).trim();
+const S=60, W=6, H=4, NMAX=8, NMIN=2, K=10; // S: px per unit of r_min, box W×H units, K rows in the chart
+let om=0.1, de=0.5, dmm=false;
+let pos=[{x:2.5,y:2.29},{x:3.5,y:2.29},{x:3,y:2.29-Math.sqrt(3)/2}], w=[1,1,1]; // equilateral triangle of side 1
+const svg=$("bgs"), disks=$("bgdisks"), edges=$("bgedges"), atoms=$("bgatoms"), chart=$("bgc");
+const dist=(i,j)=>Math.hypot(pos[i].x-pos[j].x,pos[i].y-pos[j].y);
+
+function deltas(){const N=pos.length, wmax=Math.max(...w);
+  return Array.from({length:N},(_,i)=>dmm?de+(1-w[i]/wmax)*Math.min(0,-de):de);}
+const Jij=(i,j)=>Math.pow(Math.max(dist(i,j),0.05),-6); // clamp: coincident atoms would give an infinite energy
+function spectrum(){ // all 2^N bitstrings, bit i = atom i, sorted by energy
+  const N=pos.length, d=deltas(), J=[];
+  for(let i=0;i<N;i++){J.push([]);for(let j=0;j<N;j++)J[i].push(i<j?Jij(i,j):0);}
+  const out=[];
+  for(let x=0;x<(1<<N);x++){let E=0;
+    for(let i=0;i<N;i++)if(x>>i&1){E-=d[i];for(let j=i+1;j<N;j++)if(x>>j&1)E+=J[i][j];}
+    out.push({x,E});}
+  return out.sort((a,b)=>a.E-b.E||a.x-b.x);}
+
+function draw(){
+  const N=pos.length, Rb=Math.pow(om,-1/6);
+  disks.innerHTML="";edges.innerHTML="";atoms.innerHTML="";
+  const ink=css("--ink"), c=css("--c"), bad=css("--bad"), violet=css("--violet"), panel=css("--panel"), mu=css("--muted");
+  const sp=spectrum(), E0=sp[0].E, gs=sp[0].x, ndeg=sp.filter(s=>s.E-E0<1e-9).length, eps=deltas();
+  let E=0, tooClose=0, nbroken=0, Jedge=Infinity;
+  for(let i=0;i<N;i++)el("circle",{cx:pos[i].x*S,cy:pos[i].y*S,r:Rb*S/2,fill:c,"fill-opacity":.07,stroke:c,"stroke-opacity":.35,"stroke-dasharray":"2 4"},disks);
+  const A=Array.from({length:N},()=>Array(N).fill(0));
+  for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){const d=dist(i,j), J=Jij(i,j);if(d>=Rb)continue;
+    E++;A[i][j]=A[j][i]=1;Jedge=Math.min(Jedge,J);const close=d<1-1e-9, broken=!close&&(gs>>i&1)&&(gs>>j&1);if(close)tooClose++;if(broken)nbroken++; // broken: both ends excited in the ground state
+    const col=close?bad:broken?violet:c;
+    el("line",{x1:pos[i].x*S,y1:pos[i].y*S,x2:pos[j].x*S,y2:pos[j].y*S,stroke:col,"stroke-width":close?2.5:2},edges);
+    // distance written on the bond, haloed in the panel colour so it stays legible over the line
+    el("text",{x:(pos[i].x+pos[j].x)/2*S,y:(pos[i].y+pos[j].y)/2*S+3.5,"text-anchor":"middle","font-size":9.5,"font-weight":600,fill:col,stroke:panel,"stroke-width":3,"paint-order":"stroke",style:"pointer-events:none"},edges).textContent=d.toFixed(2);}
+  // MIS window of the lecture: the tail energy Σ J over the pairs of a maximum independent set (smallest among them) < δ < weakest edge
+  let misN=0, tail=Infinity, wbest=0, gw=0; // wbest: heaviest independent set with the weights δ_i, gw: weight of the ground state when it is independent
+  for(let x=0;x<(1<<N);x++){let n=0,t=0,s=0,ind=true;
+    for(let i=0;i<N&&ind;i++)if(x>>i&1){n++;s+=eps[i];for(let j=i+1;j<N;j++)if(x>>j&1){if(A[i][j]){ind=false;break;}t+=Jij(i,j);}}
+    if(!ind)continue;wbest=Math.max(wbest,s);if(x===gs)gw=s;if(n>misN){misN=n;tail=t;}else if(n===misN)tail=Math.min(tail,t);}
+  for(let i=0;i<N;i++){const p=pos[i], on=gs>>i&1, g=el("g",{tabindex:0,"aria-label":"atom "+(i+1)+(dmm?", weight "+w[i]:"")+(on?", excited":"")},atoms);
+    g.addEventListener("focus",()=>{focusIdx=i;});g.addEventListener("blur",ev=>{if(ev.target.isConnected)focusIdx=-1;});
+    if(on)el("circle",{cx:p.x*S,cy:p.y*S,r:17,fill:c,"fill-opacity":.35},g);
+    el("circle",{cx:p.x*S,cy:p.y*S,r:9,fill:on?c:ink,stroke:panel,"stroke-width":2,style:"cursor:grab",class:"core"},g);
+    el("text",{x:p.x*S,y:p.y*S+3.5,"text-anchor":"middle","font-size":9.5,"font-weight":600,fill:panel,style:"pointer-events:none"},g).textContent=dmm?w[i]:i+1;
+    if(focusIdx===i)g.focus();}
+  svg.style.color=ink;
+  // adjacency matrix, excited atoms marked on the indices, edges inside the excited set in violet
+  const m=$("bgm"), xs=i=>gs>>i&1;m.style.gridTemplateColumns="repeat("+(N+1)+",28px)";let mh='<div></div>';
+  for(let j=0;j<N;j++)mh+='<div class="'+(xs(j)?'x':'')+'">'+(j+1)+'</div>';
+  for(let i=0;i<N;i++){mh+='<div class="'+(xs(i)?'x':'')+'">'+(i+1)+'</div>';
+    for(let j=0;j<N;j++)mh+='<div class="'+(i===j?'diag':A[i][j]?(xs(i)&&xs(j)?'cell broken':'cell on'):'cell')+'">'+(i===j?eps[i].toFixed(2):A[i][j])+'</div>';}
+  m.innerHTML=mh;
+  // chart: lowest K states, bars from zero, ground states in the accent colour
+  chart.innerHTML="";
+  const rows=sp.slice(0,K), x0=10+N*7, x1=168, lo=Math.min(0,rows[0].E), hi=Math.max(0,rows[rows.length-1].E), span=hi-lo||1;
+  const X=e=>x0+(e-lo)/span*(x1-x0), h=rows.length*18+(sp.length>K?26:10);
+  chart.setAttribute("viewBox","0 0 220 "+h);chart.style.color=ink;
+  el("line",{x1:X(0),x2:X(0),y1:2,y2:rows.length*18+2,stroke:ink,"stroke-opacity":.4},chart);
+  rows.forEach((s,k)=>{const y=k*18+4, g=s.E-E0<1e-9, bits=Array.from({length:N},(_,i)=>s.x>>i&1).join("");
+    el("text",{x:4,y:y+10.5,"font-size":10.5,"font-family":"ui-monospace,SFMono-Regular,Menlo,monospace","font-weight":g?600:400,fill:g?ink:mu},chart).textContent=bits;
+    el("rect",{x:Math.min(X(0),X(s.E)),y:y+1,width:Math.max(1,Math.abs(X(s.E)-X(0))),height:12,rx:2,fill:g?c:mu,"fill-opacity":g?1:.45},chart);
+    el("text",{x:216,y:y+10.5,"text-anchor":"end","font-size":10,fill:g?ink:mu,"font-weight":g?600:400},chart).textContent=(s.E>=0?"+":"")+s.E.toFixed(2);});
+  if(sp.length>K)el("text",{x:4,y:rows.length*18+18,"font-size":10,fill:mu},chart).textContent="and "+(sp.length-K)+" more";
+  // text
+  $("bgov").textContent=om.toFixed(2);$("bgdv").textContent=(de>0?"+":"")+de.toFixed(2);
+  $("bgrb").textContent=Rb.toFixed(2);$("bge").textContent=E;
+  $("bgn").textContent=Array.from({length:N},(_,i)=>gs>>i&1).reduce((a,b)=>a+b,0)+" of "+N;$("bge0").textContent=E0.toFixed(2);
+  const st=$("bgstat");st.className="status"+(tooClose?" bad":"");
+  const f=x=>isFinite(x)?x.toFixed(2):"none", deg=ndeg>1?" "+ndeg+" degenerate ground states, one of them shown.":"";
+  let reg;
+  if(de<0)reg="δ < 0: every excitation costs energy, nothing is excited.";
+  else if(de===0)reg="δ = 0: a single excitation is free, the ground state is degenerate.";
+  else if(dmm)reg="Local detuning on: "+(nbroken?"blockade broken on "+nbroken+(nbroken===1?" edge":" edges")+", those pairs are excited together.":gw>=wbest-1e-9?"the ground state is the maximum weight independent set, weight Σ δi = "+f(wbest)+".":"the ground state is an independent set of weight Σ δi = "+f(gw)+", below the heaviest "+f(wbest)+": the tails outweigh the missing detuning.");
+  else if(de>Jedge)reg="δ above the weakest edge (J = "+f(Jedge)+"): "+(nbroken?"blockade broken on "+nbroken+(nbroken===1?" edge":" edges")+", those pairs are excited together.":"no pair is excited together yet, the tails of the other excited atoms still hold.");
+  else if(de<tail)reg="δ below the tail energy of the maximum independent set (Σ J = "+f(tail)+"): the tails can outweigh one excitation, the ground state may have fewer atoms than the independent set.";
+  else reg="Independent set regime: tail energy of the MIS Σ J = "+f(tail)+" < δ < weakest edge J = "+f(Jedge)+".";
+  st.textContent=tooClose?(tooClose===1?"One pair":tooClose+" pairs")+" closer than r = 1: the device would reject this register":reg+deg;
+  $("bgdmm").textContent=dmm?"Local detuning on":"Local detuning (DMM)";
+  $("bghint").textContent=dmm?"The DMM adds ε·Δ to each atom, with Δ = "+Math.min(0,-de).toFixed(2)+(de<0?" (it can only lower the detuning, so Δ = 0 when δ < 0).":".")+" Click an atom to raise its weight w (1 to 5), shift-click or right-click to lower it: ε = 1 − w/max w, so atom i sees δ w/max w and the heaviest atom keeps the full δ."
+    :"Every atom sees the same detuning δ. The detuning map modulator (DMM) can lower it atom by atom: click an atom to give it a weight and switch it on.";
+}
+
+// drag to move, click (no movement) to cycle the weight 1 to 5; keyboard on a focused atom
+let drag=-1, moved=false, start=null, focusIdx=-1;
+function toUser(ev){const p=svg.createSVGPoint();p.x=ev.clientX;p.y=ev.clientY;return p.matrixTransform(svg.getScreenCTM().inverse());}
+svg.addEventListener("pointerdown",ev=>{const u=toUser(ev);let b=-1,bd=16;
+  pos.forEach((p,i)=>{const d=Math.hypot(p.x*S-u.x,p.y*S-u.y);if(d<bd){bd=d;b=i;}});
+  if(b>=0){drag=b;moved=false;start=u;svg.setPointerCapture(ev.pointerId);}});
+svg.addEventListener("pointermove",ev=>{if(drag<0)return;const u=toUser(ev);
+  if(!moved&&Math.hypot(u.x-start.x,u.y-start.y)<3)return;moved=true;place(drag,u.x/S,u.y/S);});
+function place(i,x,y){const q={x:Math.min(W-.2,Math.max(.2,x)),y:Math.min(H-.2,Math.max(.2,y))};
+  if(pos.every((o,k)=>k===i||Math.hypot(q.x-o.x,q.y-o.y)>=0.15)){pos[i]=q;draw();}} // never on top of another atom
+const end=ev=>{if(drag>=0&&!moved){if(!dmm)dmm=true;else{const down=ev.shiftKey||ev.button===2;w[drag]=down?(w[drag]+3)%5+1:w[drag]%5+1;}setDmm();draw();}drag=-1;};
+svg.addEventListener("contextmenu",ev=>ev.preventDefault());
+const setDmm=()=>$("bgdmm").setAttribute("aria-pressed",String(dmm));
+svg.addEventListener("pointerup",end);svg.addEventListener("pointercancel",()=>{drag=-1;});
+svg.addEventListener("keydown",ev=>{const i=focusIdx;if(i<0)return;const k=ev.key, p=pos[i], m=0.1;
+  if(k==="ArrowLeft")place(i,p.x-m,p.y);else if(k==="ArrowRight")place(i,p.x+m,p.y);else if(k==="ArrowUp")place(i,p.x,p.y-m);else if(k==="ArrowDown")place(i,p.x,p.y+m);
+  else if(k==="+"||k==="="){if(!dmm)dmm=true;else w[i]=w[i]%5+1;setDmm();draw();}else if(k==="-"){if(!dmm)dmm=true;else w[i]=(w[i]+3)%5+1;setDmm();draw();}
+  else if(k==="Enter"||k===" "){dmm=!dmm;setDmm();draw();}else return;ev.preventDefault();});
+
+function addAtom(){if(pos.length>=NMAX)return;let p=null;
+  for(let t=0;t<300&&!p;t++){const q={x:.4+Math.random()*(W-.8),y:.4+Math.random()*(H-.8)};
+    if(pos.every((o,i)=>Math.hypot(q.x-o.x,q.y-o.y)>=1.05))p=q;}
+  pos.push(p||{x:.4+Math.random()*(W-.8),y:.4+Math.random()*(H-.8)});w.push(1);draw();}
+$("bgadd").addEventListener("click",addAtom);
+$("bgrm").addEventListener("click",()=>{if(pos.length>NMIN){pos.pop();w.pop();draw();}});
+$("bgdmm").addEventListener("click",()=>{dmm=!dmm;setDmm();draw();});
+$("bgo").addEventListener("input",e=>{om=+e.target.value;draw();});
+$("bgd").addEventListener("input",e=>{de=+e.target.value;draw();});
+new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+draw();
+})();
+</script>
+</div>

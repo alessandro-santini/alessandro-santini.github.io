@@ -1,0 +1,105 @@
+baseURL: https://alessandrosantini.dev/
+languageCode: en-GB
+title: Alessandro Santini
+theme: PaperMod
+
+enableRobotsTXT: true
+buildDrafts: false
+buildFuture: false
+buildExpired: false
+enableEmoji: false
+disableKinds: [taxonomy, term, rss]
+
+# Nothing is listed on the home page; the home page is content/_index.md
+mainSections: []
+
+minify:
+  disableXML: true
+  minifyOutput: true
+
+params:
+  env: production
+  author: Alessandro Santini
+  description: >-
+    Quantum algorithm developer at Pasqal. Algorithms and software for
+    neutral-atom quantum computers; tensor networks and neural quantum states.
+  keywords: [quantum computing, neutral atoms, Rydberg, QoolQit, NetKet, tensor networks, neural quantum states]
+  defaultTheme: auto
+  disableThemeToggle: false
+  ShowBreadCrumbs: false
+  ShowCodeCopyButtons: true
+  ShowWordCount: false
+  ShowRssButtonInSectionTermList: false
+  ShowToc: false
+  hideMeta: true
+  hideSummary: true
+  disableScrollToTop: false
+
+  # The CV link lives on the About page.
+  socialIcons:
+    - name: github
+      title: GitHub
+      url: https://github.com/alessandro-santini
+    - name: linkedin
+      title: LinkedIn
+      url: https://www.linkedin.com/in/alessandro-santini-ab9939214
+    - name: googlescholar
+      title: Google Scholar
+      url: https://scholar.google.com/citations?user=HXiSLuoAAAAJ
+    - name: orcid
+      title: ORCID
+      url: https://orcid.org/0000-0002-4949-7463
+    - name: email
+      title: Email
+      url: mailto:hello@alessandrosantini.dev
+
+  assets:
+    disableHLJS: true
+    favicon: /favicon.ico
+    favicon16x16: /favicon-16x16.png
+    favicon32x32: /favicon-32x32.png
+    apple_touch_icon: /apple-touch-icon.png
+    safari_pinned_tab: /favicon.svg
+
+  # Accent colour, used everywhere (links, lattice, widgets). Change it here only.
+  # Keep contrast >= 4.5:1 on the light (#FBFBF9) and dark (#16181A) backgrounds.
+  accent:
+    light: "#7A8B00"
+    dark: "#B8C46A"
+
+  # schema.org JSON-LD on the home page: a Person, not an Organization.
+  schema:
+    publisherType: Person
+    sameAs:
+      - https://github.com/alessandro-santini
+      - https://www.linkedin.com/in/alessandro-santini-ab9939214
+      - https://scholar.google.com/citations?user=HXiSLuoAAAAJ
+      - https://orcid.org/0000-0002-4949-7463
+      
+menu:
+  main:
+    - identifier: projects
+      name: Projects
+      url: /projects/
+      weight: 10
+    - identifier: publications
+      name: Publications
+      url: /publications/
+      weight: 20
+    - identifier: teaching
+      name: Teaching
+      url: /teaching/
+      weight: 30
+    - identifier: about
+      name: About
+      url: /about/
+      weight: 40
+
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
+  highlight:
+    noClasses: false
+    style: github
+

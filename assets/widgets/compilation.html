@@ -1,0 +1,166 @@
+<div class="cpl">
+<style>
+.cpl{--panel:var(--entry);--ink:var(--primary);--muted:var(--secondary);--line:var(--border);--c:var(--accent);--bad:#B3261E;margin:16px 0}
+:root[data-theme="dark"] .cpl{--bad:#F28B82}
+.cpl .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px}
+.cpl svg{display:block;width:100%;height:auto;touch-action:none;cursor:grab}
+.cpl svg.dragging{cursor:grabbing}
+.cpl .controls{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 20px;margin:12px 0}
+@media (max-width:560px){.cpl .controls{grid-template-columns:1fr}}
+.cpl .control label{display:flex;justify-content:space-between;font-size:.9rem}
+.cpl .control label span:last-child{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.cpl input[type=range]{width:100%;accent-color:var(--c);height:24px}
+.cpl .presets{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px}
+.cpl .presets span{color:var(--muted);font-size:.85rem;margin-right:4px}
+.cpl button{font:inherit;font-size:.9rem;font-weight:500;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:999px;padding:5px 14px;cursor:pointer}
+.cpl button:focus-visible,.cpl input:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+.cpl .status{font-size:.9rem;margin-top:8px;min-height:1.4em}
+.cpl .status.bad{color:var(--bad)}
+.cpl .alpha{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-bottom:10px}
+.cpl .alpha .control{flex:1;min-width:200px}
+.cpl .gauges{display:grid;gap:10px;margin-top:6px}
+.cpl .gauge{display:grid;grid-template-columns:10em 1fr 6em;gap:10px;align-items:center;font-size:.9rem}
+@media (max-width:500px){.cpl .gauge{grid-template-columns:7em 1fr 5em}}
+.cpl .gauge .k{color:var(--muted)}
+.cpl .gauge .v{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.cpl .gauge.bad .v{color:var(--bad)}
+.cpl .track{position:relative;height:8px;background:var(--line);border-radius:4px}
+.cpl .fill{position:absolute;left:0;top:0;bottom:0;background:var(--c);border-radius:4px}
+.cpl .gauge.bad .fill{background:var(--bad)}
+.cpl .lim{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink);opacity:.6}
+.cpl .dur{display:flex;justify-content:space-between;font-size:.9rem;margin-top:10px}
+.cpl .dur span:first-child{color:var(--muted)}
+.cpl .dur span:last-child{font-variant-numeric:tabular-nums;font-weight:600}
+.cpl .compiler{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.8rem;line-height:1.5;white-space:pre-wrap;margin:10px 0 0;color:var(--ink)}
+.cpl .compiler.bad{color:var(--bad)}
+.cpl .fine{font-size:.82rem;color:var(--muted);margin-top:10px}
+</style>
+
+<div class="controls">
+  <div class="control"><label for="cpj"><span>Program largest J</span><span id="cpjv"></span></label><input id="cpj" type="range" min="0.02" max="2" step="0.01" value="1"></div>
+  <div class="control"><label for="cpo"><span>Program Ω<sub>max</sub></span><span id="cpov"></span></label><input id="cpo" type="range" min="0.01" max="0.5" step="0.01" value="0.1"></div>
+  <div class="control"><label for="cpd"><span>Program |δ|<sub>max</sub></span><span id="cpdv"></span></label><input id="cpd" type="range" min="0" max="3" step="0.05" value="0.5"></div>
+  <div class="control"><label for="cpt"><span>Program duration T</span><span id="cptv"></span></label><input id="cpt" type="range" min="1" max="400" step="1" value="2"></div>
+</div>
+<div class="presets"><span>Presets, two atoms at r = 1 with</span><button type="button" data-preset="0.1">Ω = 0.1</button><button type="button" data-preset="0.4">Ω = 0.4</button></div>
+
+<div class="panel">
+  <svg id="cps" viewBox="0 0 360 280" role="group" aria-label="Plane of largest interaction against largest amplitude, with the allowed rectangle, the program point and the compiled point. Drag the program point or use the sliders."></svg>
+  <div class="status" id="cpstat"></div>
+</div>
+
+<div class="panel">
+  <div class="alpha">
+    <div class="control"><label for="cpal"><span>scale α (log slider)</span><span id="cpav"></span></label><input id="cpal" type="range" min="-2" max="1" step="0.01" value="0"></div>
+    <button type="button" data-profile="default">default, α = 1</button>
+    <button type="button" data-profile="max">maximum-energy</button>
+  </div>
+  <div class="gauges">
+    <div class="gauge" id="cpgW"><span class="k">Ω/2π ≤ 2 MHz</span><div class="track"><div class="fill"></div><div class="lim"></div></div><span class="v"></span></div>
+    <div class="gauge" id="cpgD"><span class="k">|δ|/2π ≤ 20 MHz</span><div class="track"><div class="fill"></div><div class="lim"></div></div><span class="v"></span></div>
+    <div class="gauge" id="cpgR"><span class="k">closest pair ≥ 5 µm</span><div class="track"><div class="fill"></div><div class="lim"></div></div><span class="v"></span></div>
+  </div>
+  <div class="dur"><span>sequence duration T/(α J<sub>max</sub>)</span><span id="cpdur"></span></div>
+  <pre class="compiler" id="cpout"></pre>
+</div>
+
+<p>For the compiler a program is a point: its largest interaction J, set by the closest pair of atoms, and its largest amplitude Ω<sub>max</sub>. The device accepts the rectangle J ≤ 1 (closest pair at r<sub>min</sub> or further) and Ω<sub>max</sub> ≤ 0.2268 (amplitude at the device maximum 2π × 2 MHz or below). Multiplying every energy by α and dividing time by α leaves the physics unchanged, so the compiler has exactly one free number: it moves the point along its line through the origin. Larger α means a shorter sequence, so it is worth pushing. The default profile keeps α = 1 and rejects any point outside the rectangle. The maximum-energy profile raises α until the point hits the boundary: drive-limited if the amplitude reaches the device maximum first, interaction-limited if the closest pair reaches r<sub>min</sub> first. Drag the point, or move α yourself, to see which limit bites, and read off how long the sequence of T time units becomes. The detuning scales with α as well, and the device caps |δ| at 2π × 20 MHz: the compiler does not lower α for it, it rejects the program, so a large |δ| in the program can make the maximum-energy profile fail.</p>
+<p class="fine">The device sets the energy unit J<sub>max</sub> = C<sub>6</sub>/(ħ r<sub>min</sub><sup>6</sup>) = 55.4 rad/µs, as in the earlier widgets, so one time unit is 18.05 ns. Physical values: Ω = α Ω<sub>max</sub> J<sub>max</sub>, closest distance r<sub>min</sub> (α J)<sup>−1/6</sup>, duration T/(α J<sub>max</sub>). Maximum-energy: α = min(1/J, 0.2268/Ω<sub>max</sub>). Device: r<sub>min</sub> = 5 µm, amplitude up to 2π × 2 MHz (0.2268 J<sub>max</sub>), |δ| up to 2π × 20 MHz (2.268 J<sub>max</sub>); the 6 µs maximum sequence duration and the 4 ns clock rounding are not shown. The α slider stops where the compiled point would leave the plane.</p>
+
+<script>
+(function(){
+const root=document.querySelector(".cpl"), $=id=>root.querySelector("#"+id);
+const NS="http://www.w3.org/2000/svg";
+const el=(tag,attrs,parent)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent.appendChild(e);return e;};
+const css=v=>getComputedStyle(root).getPropertyValue(v).trim();
+const C6=865723.02, RMIN=5, JDEV=C6/Math.pow(RMIN,6), WMAX=2*Math.PI*2, OMT=WMAX/JDEV, DMAX=2*Math.PI*20; // J_dev = 55.4 rad/µs, Ω_max/J_dev = 0.2268
+const XMAX=2, YMAX=0.5, P={l:44,r:14,t:14,b:36,w:360,h:280};
+const ANIM=matchMedia("(prefers-reduced-motion: reduce)").matches?0:700;
+let J=1, O=0.1, Dm=0.5, T=2, la=0, anim=null, raf=0; // la = log10 α; anim: {t0, from, to} slides la
+const svg=$("cps"), grid=el("g",{},svg), rect=el("rect",{"fill-opacity":.1,"stroke-width":1.5},svg);
+const ray=el("line",{"stroke-dasharray":"4 4","stroke-opacity":.5},svg), prog=el("circle",{r:6,"stroke-width":2},svg);
+const comp=el("circle",{r:7,"stroke-width":2},svg), plab=el("text",{"font-size":11},svg), clab=el("text",{"font-size":11,"font-weight":600},svg);
+const px=j=>P.l+(P.w-P.l-P.r)*j/XMAX, py=o=>P.h-P.b-(P.h-P.b-P.t)*o/YMAX;
+const laMax=()=>Math.log10(Math.min(XMAX/J,YMAX/O)); // keep the compiled point inside the plane
+const fmt=x=>x>=100?x.toFixed(0):x>=10?x.toFixed(1):x.toFixed(2);
+const fmtA=a=>a.toFixed(a<0.1?3:2), fmtT=t=>t>=1000?(t/1000).toFixed(2)+" µs":t.toFixed(0)+" ns";
+const aMax=()=>Math.min(1/J,OMT/O);
+
+function gauge(id,val,lim,upper,text){const g=$(id), bad=upper?val>lim*(1+1e-9):val<lim*(1-1e-9);
+  g.className="gauge"+(bad?" bad":"");g.querySelector(".fill").style.width=(Math.min(1,val/(lim*1.6))*100).toFixed(1)+"%";
+  g.querySelector(".lim").style.left=(100/1.6).toFixed(1)+"%";g.querySelector(".v").textContent=text;}
+
+function drawGrid(){grid.innerHTML="";const mu=css("--muted"),line=css("--line"),ink=css("--ink");
+  for(let x=0;x<=XMAX+1e-9;x+=0.5){el("line",{x1:px(x),x2:px(x),y1:P.t,y2:P.h-P.b,stroke:line},grid);
+    el("text",{x:px(x),y:P.h-P.b+14,"text-anchor":"middle","font-size":11,fill:mu},grid).textContent=x;}
+  for(let y=0;y<=YMAX+1e-9;y+=0.1){el("line",{x1:P.l,x2:P.w-P.r,y1:py(y),y2:py(y),stroke:line},grid);
+    el("text",{x:P.l-6,y:py(y)+4,"text-anchor":"end","font-size":11,fill:mu},grid).textContent=+y.toFixed(2);}
+  el("text",{x:(P.l+P.w-P.r)/2,y:P.h-4,"text-anchor":"middle","font-size":11,fill:mu},grid).textContent="largest interaction J";
+  el("text",{x:12,y:(P.t+P.h-P.b)/2,"text-anchor":"middle","font-size":11,fill:mu,transform:"rotate(-90 12 "+(P.t+P.h-P.b)/2+")"},grid).textContent="largest amplitude Ωmax";
+  el("text",{x:px(0.32),y:py(OMT/2)+4,"text-anchor":"middle","font-size":11,fill:ink,"fill-opacity":.7},grid).textContent="allowed";
+  el("text",{x:px(1)+4,y:P.t+10,"font-size":10,fill:mu},grid).textContent="J = 1";
+  el("text",{x:P.l+4,y:py(OMT)-5,"font-size":10,fill:mu},grid).textContent="Ω = 0.2268";
+  svg.style.color=ink;}
+
+function frame(){raf=0;draw();}
+function draw(){
+  if(anim){const u0=ANIM?Math.min(1,(performance.now()-anim.t0)/ANIM):1, u=1-Math.pow(1-u0,3);
+    la=anim.from+(anim.to-anim.from)*u;if(u0>=1)anim=null;else if(!raf)raf=requestAnimationFrame(frame);}
+  la=Math.min(la,laMax());const sl=$("cpal");sl.max=(Math.ceil(laMax()*100)/100).toFixed(2);sl.value=la;
+  $("cpj").value=J;$("cpo").value=O;$("cpd").value=Dm;$("cpt").value=T;
+  drawGrid();
+  const c=css("--c"), ink=css("--ink"), bad=css("--bad"), panel=css("--panel"), mu=css("--muted");
+  rect.setAttribute("x",px(0));rect.setAttribute("y",py(OMT));rect.setAttribute("width",px(1)-px(0));rect.setAttribute("height",py(0)-py(OMT));
+  rect.setAttribute("fill",c);rect.setAttribute("stroke",c);
+  const a=Math.pow(10,la), cj=a*J, co=a*O, Om=co*JDEV, d=RMIN*Math.pow(cj,-1/6), dur=T/(a*JDEV)*1000, De=a*Dm*JDEV;
+  const errs=[];if(cj>1+1e-9)errs.push("atoms too close");if(co>OMT+1e-9)errs.push("amplitude too large");if(De>DMAX+1e-9)errs.push("detuning too large");
+  const plane=errs.filter(e=>e!=="detuning too large"), detBad=errs.length>plane.length;
+  const ok=!errs.length, drive=OMT/O<=1/J, both=Math.abs(OMT/O-1/J)<1e-6, hi=aMax(), atMax=Math.abs(a-hi)<1e-6;
+  // plane: ray through the program point, compiled point at α times it
+  const s=Math.min(XMAX/J,YMAX/O);ray.setAttribute("stroke",mu);
+  ray.setAttribute("x1",px(0));ray.setAttribute("y1",py(0));ray.setAttribute("x2",px(s*J));ray.setAttribute("y2",py(s*O));
+  prog.setAttribute("cx",px(J));prog.setAttribute("cy",py(O));prog.setAttribute("fill",ink);prog.setAttribute("stroke",panel);
+  comp.setAttribute("cx",px(cj));comp.setAttribute("cy",py(co));comp.setAttribute("fill",c);comp.setAttribute("stroke",panel);
+  const cleft=cj>1, cy=Math.max(P.t+10,py(co)-8);clab.setAttribute("x",px(cj)+(cleft?-11:11));clab.setAttribute("y",cy);clab.setAttribute("text-anchor",cleft?"end":"start");clab.setAttribute("fill",c);
+  // the compiled point sits on the program point at α = 1: put "program" below its point when the two labels would collide
+  const left=J>0.3, ly=Math.max(P.t+10,py(O)-8), collide=Math.abs(px(cj)-px(J))<100&&Math.abs(cy-ly)<12;
+  plab.setAttribute("x",px(J)+(left?-10:10));plab.setAttribute("y",collide?Math.min(P.h-P.b-4,py(O)+18):ly);plab.setAttribute("text-anchor",left?"end":"start");plab.setAttribute("fill",mu);plab.textContent="program";
+  clab.textContent="α = "+fmtA(a); // errors are reported by the status line and the compiler output, not on the point
+  const st=$("cpstat");st.className="status"+(errs.length?" bad":"");
+  st.textContent=plane.length?"Outside the rectangle: "+plane.join(" and ")+(detBad?", and the detuning is too large":"")
+    :detBad?"Detuning too large: |δ|/2π = "+fmt(De/(2*Math.PI))+" MHz after rescaling, above 20 MHz; lower α or the program's δ"
+    :atMax?(both?"Both limits at once: the amplitude reaches the device maximum as the closest pair reaches rmin":drive?"Drive-limited: the amplitude reaches the device maximum, the closest pair sits at "+fmt(d)+" µm, further apart than rmin":"Interaction-limited: the closest pair sits at rmin, Ω/2π stays at "+fmt(Om/(2*Math.PI))+" MHz, below 2 MHz")
+    :"Inside the rectangle: α could still grow to "+fmtA(hi)+" (the "+(drive?"drive":"interaction")+" limit)";
+  // sliders, gauges and compiler output
+  $("cpjv").textContent=J.toFixed(2);$("cpov").textContent=O.toFixed(2);$("cpdv").textContent=Dm.toFixed(2);$("cptv").textContent=T;
+  $("cpav").textContent=fmtA(a);sl.setAttribute("aria-valuetext","α = "+fmtA(a));
+  gauge("cpgW",Om,WMAX,true,fmt(Om/(2*Math.PI))+" MHz");gauge("cpgD",De,DMAX,true,fmt(De/(2*Math.PI))+" MHz");gauge("cpgR",d,RMIN,false,fmt(d)+" µm");$("cpdur").textContent=fmtT(dur);
+  const lines=errs.map(e=>"error: "+e+(e==="atoms too close"?", "+fmt(d)+" µm < 5 µm":e==="amplitude too large"?", Ω/2π = "+fmt(Om/(2*Math.PI))+" MHz > 2 MHz":", |δ|/2π = "+fmt(De/(2*Math.PI))+" MHz > 20 MHz"));
+  if(ok)lines.push("ok: compiled with α = "+fmtA(a)+", sequence of "+fmtT(dur));
+  lines.push("maximum-energy takes α = "+fmtA(hi)+", "+(drive?"drive-limited":"interaction-limited")+", sequence of "+fmtT(T/(hi*JDEV)*1000)+(hi*Dm*JDEV>DMAX+1e-9?", rejected: |δ|/2π = "+fmt(hi*Dm*JDEV/(2*Math.PI))+" MHz > 20 MHz":""));
+  const out=$("cpout");out.className="compiler"+(ok?"":" bad");out.textContent=lines.join("\n");
+}
+const setAlpha=(a,slide)=>{const to=Math.max(-2,Math.min(laMax(),Math.log10(a)));
+  if(slide&&ANIM)anim={t0:performance.now(),from:la,to};else{la=to;anim=null;}draw();};
+
+// drag the program point anywhere on the plane
+let dragging=false;
+function toUser(ev){const p=svg.createSVGPoint();p.x=ev.clientX;p.y=ev.clientY;return p.matrixTransform(svg.getScreenCTM().inverse());}
+function move(ev){const u=toUser(ev);J=Math.min(XMAX,Math.max(0.02,(u.x-P.l)/(P.w-P.l-P.r)*XMAX));O=Math.min(YMAX,Math.max(0.01,(P.h-P.b-u.y)/(P.h-P.b-P.t)*YMAX));anim=null;draw();}
+svg.addEventListener("pointerdown",ev=>{dragging=true;svg.classList.add("dragging");svg.setPointerCapture(ev.pointerId);move(ev);});
+svg.addEventListener("pointermove",ev=>{if(dragging)move(ev);});
+const end=()=>{dragging=false;svg.classList.remove("dragging");};
+svg.addEventListener("pointerup",end);svg.addEventListener("pointercancel",end);
+
+$("cpj").addEventListener("input",e=>{J=+e.target.value;anim=null;draw();});
+$("cpo").addEventListener("input",e=>{O=+e.target.value;anim=null;draw();});
+$("cpd").addEventListener("input",e=>{Dm=+e.target.value;anim=null;draw();});
+$("cpt").addEventListener("input",e=>{T=+e.target.value;anim=null;draw();});
+$("cpal").addEventListener("input",e=>{la=+e.target.value;anim=null;draw();});
+root.querySelectorAll("[data-preset]").forEach(b=>b.addEventListener("click",()=>{J=1;O=+b.dataset.preset;setAlpha(1,false);}));
+root.querySelectorAll("[data-profile]").forEach(b=>b.addEventListener("click",()=>setAlpha(b.dataset.profile==="max"?aMax():1,true)));
+new MutationObserver(()=>{if(!anim)draw();}).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+draw();
+})();
+</script>
+</div>

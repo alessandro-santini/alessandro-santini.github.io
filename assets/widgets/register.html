@@ -1,0 +1,129 @@
+<div class="register">
+<style>
+.register{--panel:var(--entry);--ink:var(--primary);--muted:var(--secondary);--line:var(--border);--atom:var(--accent);margin:16px 0}
+.register .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.register .panel svg{display:block;width:100%;height:auto;max-width:360px;margin:0 auto}
+.register .status{display:flex;align-items:center;gap:.6rem;margin:.3rem 2px 0;font-weight:500;font-size:.9rem;min-height:1.4em}
+.register .dot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--atom)}
+.register .controls{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;margin:12px 0}
+@media (max-width:500px){.register .controls{grid-template-columns:1fr}}
+.register .control label{display:flex;justify-content:space-between;font-size:.9rem}
+.register .control label span:last-child{font-variant-numeric:tabular-nums;color:var(--muted)}
+.register input[type=range]{width:100%;accent-color:var(--atom);height:24px}
+.register .readouts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.register .readout{border-top:2px solid var(--line);padding-top:4px}
+.register .readout .k{font-family:var(--font-serif);font-style:italic;color:var(--muted);font-size:.9rem}
+.register .readout .v{font-size:1rem;font-weight:600;font-variant-numeric:tabular-nums}
+.register .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.register button{font:inherit;font-size:.9rem;font-weight:500;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:999px;padding:5px 14px;cursor:pointer}
+.register button:focus-visible,.register input:focus-visible{outline:2px solid var(--atom);outline-offset:2px}
+.register .fine{font-size:.82rem;color:var(--muted);margin-top:10px}
+</style>
+
+<div class="controls">
+  <div class="control">
+    <label for="lp"><span>Loading probability p</span><span id="lpv"></span></label>
+    <input id="lp" type="range" min="0.2" max="0.8" step="0.05" value="0.5">
+  </div>
+  <div class="control">
+    <label for="ll"><span>Loss per move</span><span id="llv"></span></label>
+    <input id="ll" type="range" min="0" max="0.3" step="0.01" value="0.15">
+  </div>
+</div>
+
+<div class="panel">
+  <svg id="lat" viewBox="0 0 360 300" role="img" aria-label="Array of optical tweezers being loaded and rearranged">
+    <rect id="tgt" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-dasharray="4 4" rx="4"/>
+    <g id="traps"></g><g id="atoms"></g><circle id="mover" r="7" fill="var(--atom)" visibility="hidden"/>
+  </svg>
+  <div class="status"><span class="dot"></span><span id="ltext"></span></div>
+</div>
+
+<div class="bar">
+  <div class="readouts" style="flex:1;margin:0 14px 0 0">
+    <div class="readout"><div class="k">in traps</div><div class="v" id="rN"></div></div>
+    <div class="readout"><div class="k">lost</div><div class="v" id="rL"></div></div>
+    <div class="readout"><div class="k">cycles</div><div class="v" id="rC"></div></div>
+    <div class="readout"><div class="k">p<sup>36</sup></div><div class="v" id="rP"></div></div>
+  </div>
+  <button id="reload" type="button">Reload</button>
+</div>
+
+<p class="fine">Each trap captures an atom independently with probability p, so a 6×6 target fills by chance alone with probability p<sup>36</sup>. Rearrangement moves atoms from the reservoir, the loaded traps outside the dashed square, into the empty target sites, one move at a time; each move can lose the atom, so cycles repeat until the target is complete. The default loss per move, 15 %, is about ten times the real figure, exaggerated so that losses show up within a few cycles; and the moves fly in straight lines through occupied traps, where a real tweezer follows row and column paths that avoid them. Reservoir empty: start over.</p>
+
+<script>
+(function(){
+// ponytail: straight-line moves may cross occupied traps; real sorters route around them.
+// Include this widget at most once per page.
+const G=12, TG=6, T0=3, CELL=24, OX=36, OY=6, N=G*G;
+const root=document.querySelector(".register"), $=id=>root.querySelector("#"+id); // scoped: ids may repeat across widgets
+const NS="http://www.w3.org/2000/svg";
+const el=(tag,attrs,parent)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent.appendChild(e);return e;};
+const reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const MOVE_MS=reduced?0:320, PAUSE=reduced?200:800;
+
+let p=0.5, pl=0.15, occ=new Array(N).fill(false), st={lost:0,cycles:0}, timer=0, gen=0;
+const cx=i=>OX+(i%G)*CELL+CELL/2, cy=i=>OY+Math.floor(i/G)*CELL+CELL/2;
+const inT=i=>{const r=Math.floor(i/G),c=i%G;return r>=T0&&r<T0+TG&&c>=T0&&c<T0+TG;};
+
+$("tgt").setAttribute("x",OX+T0*CELL);$("tgt").setAttribute("y",OY+T0*CELL);
+$("tgt").setAttribute("width",TG*CELL);$("tgt").setAttribute("height",TG*CELL);
+const atoms=[];
+for(let i=0;i<N;i++){
+  el("circle",{cx:cx(i),cy:cy(i),r:2,fill:"currentColor","fill-opacity":.25},$("traps"));
+  atoms.push(el("circle",{cx:cx(i),cy:cy(i),r:7,fill:"var(--atom)"},$("atoms")));
+}
+function draw(){
+  for(let i=0;i<N;i++)atoms[i].setAttribute("visibility",occ[i]?"visible":"hidden");
+  $("rN").textContent=occ.filter(Boolean).length+" / "+N;$("rL").textContent=st.lost;$("rC").textContent=st.cycles;
+}
+function text(){$("lpv").textContent=p.toFixed(2);$("llv").textContent=Math.round(pl*100)+" %";$("rP").textContent=Math.pow(p,TG*TG).toExponential(1);}
+const say=s=>$("ltext").textContent=s;
+const later=(fn,ms)=>{clearTimeout(timer);const g=gen;timer=setTimeout(()=>{if(g===gen)fn();},ms);};
+const full=()=>occ.every((o,i)=>o||!inT(i));
+
+function load(){
+  gen++;$("mover").setAttribute("visibility","hidden");
+  for(let i=0;i<N;i++)occ[i]=Math.random()<p;
+  st={lost:0,cycles:0};draw();
+  say("Loaded "+occ.filter(Boolean).length+" atoms in "+N+" traps, "+occ.filter((o,i)=>o&&inT(i)).length+" of "+TG*TG+" in the target");
+  later(cycle,PAUSE);
+}
+function plan(){
+  const res=[];for(let i=0;i<N;i++)if(occ[i]&&!inT(i))res.push(i);
+  const moves=[];
+  for(let t=0;t<N;t++){if(!inT(t)||occ[t])continue;if(!res.length)break;
+    let b=0,bd=1e9;for(let k=0;k<res.length;k++){const d=Math.abs(res[k]%G-t%G)+Math.abs(Math.floor(res[k]/G)-Math.floor(t/G));if(d<bd){bd=d;b=k;}}
+    moves.push([res[b],t]);res.splice(b,1);}
+  return moves;
+}
+function cycle(){
+  if(full()){say("Target filled after "+st.cycles+(st.cycles===1?" cycle":" cycles"));later(load,PAUSE*3);return;}
+  const moves=plan();
+  if(!moves.length){say("Reservoir empty, target incomplete: reloading");later(load,PAUSE*2);return;}
+  st.cycles++;draw();say("Cycle "+st.cycles+": "+moves.length+(moves.length===1?" move":" moves"));
+  run(moves,0);
+}
+function run(moves,i){
+  if(i>=moves.length){later(cycle,PAUSE/2);return;}
+  const [a,b]=moves[i], lost=Math.random()<pl, m=$("mover"), g=gen, t0=performance.now();
+  occ[a]=false;draw();m.setAttribute("visibility","visible");
+  (function step(now){
+    if(g!==gen)return;
+    const u=MOVE_MS?Math.min(1,(now-t0)/MOVE_MS):1;
+    m.setAttribute("cx",cx(a)+(cx(b)-cx(a))*u);m.setAttribute("cy",cy(a)+(cy(b)-cy(a))*u);
+    m.setAttribute("fill-opacity",lost?1-u:1);
+    if(u<1){requestAnimationFrame(step);return;}
+    m.setAttribute("visibility","hidden");
+    if(lost){st.lost++;say("Atom lost during the move");}else occ[b]=true;
+    draw();run(moves,i+1);
+  })(t0);
+}
+
+$("lp").addEventListener("input",e=>{p=+e.target.value;text();});
+$("ll").addEventListener("input",e=>{pl=+e.target.value;text();});
+$("reload").addEventListener("click",load);
+text();load();
+})();
+</script>
+</div>
